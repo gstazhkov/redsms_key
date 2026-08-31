@@ -765,6 +765,99 @@
       background: rgba(255,255,255,0.3);
     }
 
+    /* Save Notification Styles */
+    .save-notification {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #27AE60;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+      font-weight: 600;
+    }
+
+    .save-notification.error {
+      background: #E74C3C;
+    }
+
+    .save-notification.warning {
+      background: #F39C12;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .save-controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ECF0F1;
+    }
+
+    .save-controls button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      flex: 1;
+    }
+
+    .export-btn {
+      background: #3498DB;
+      color: white;
+    }
+
+    .export-btn:hover {
+      background: #2980B9;
+    }
+
+    .import-btn {
+      background: #9B59B6;
+      color: white;
+    }
+
+    .import-btn:hover {
+      background: #8E44AD;
+    }
+
+    #import-input {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .save-notification {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .save-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .save-controls button {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -796,6 +889,11 @@
       <h3>Категории</h3>
       <ul id="categories-list"></ul>
       <button class="add-new-btn" onclick="openAddNewForm()">➕ Добавить карточку</button>
+      <div class="save-controls">
+        <button class="export-btn" onclick="exportData()">📥 Экспорт</button>
+        <button class="import-btn" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
+        <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+      </div>
     </div>
 
     <div id="cards-container" class="cards-grid"></div>
@@ -2012,6 +2110,67 @@ function closeAddModal() {
   document.getElementById('add-modal').classList.remove('active');
 }
 
+function showSaveNotification(message, type = 'success') {
+  const notification = document.createElement('div');
+  notification.className = `save-notification ${type !== 'success' ? type : ''}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+function autoSave() {
+  localStorage.setItem('kbData', JSON.stringify(kbData));
+  localStorage.setItem('lastSave', new Date().toISOString());
+}
+
+function exportData() {
+  const dataStr = JSON.stringify(kbData, null, 2);
+  const dataBlob = new Blob([dataStr], {type: 'application/json'});
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `kb-export-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showSaveNotification('✅ Данные экспортированы!');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      
+      if (!imported.data || !imported.categories) {
+        showSaveNotification('❌ Неверный формат файла', 'error');
+        return;
+      }
+      
+      if (confirm('Это перезапишет все текущие данные. Вы уверены?')) {
+        kbData = imported;
+        autoSave();
+        filterCards();
+        showSaveNotification('✅ Данные импортированы!');
+      }
+    } catch (error) {
+      showSaveNotification('❌ Ошибка чтения файла', 'error');
+    }
+  };
+  reader.readAsText(file);
+  
+  // Reset file input
+  event.target.value = '';
+}
+
 function saveNewCard() {
   const title = document.getElementById('new-title').value.trim();
   const description = document.getElementById('new-description').value.trim();
@@ -2038,31 +2197,32 @@ function saveNewCard() {
   };
 
   kbData.data.push(newCard);
-  localStorage.setItem('kbData', JSON.stringify(kbData));
+  autoSave();
   
   closeAddModal();
   filterCards();
-  alert('✅ Карточка добавлена!');
+  showSaveNotification('✅ Карточка добавлена и сохранена!');
 }
 
 function changeStatus(id, newStatus) {
   const item = kbData.data.find(d => d.id === id);
   if (item) {
     item.status = newStatus;
-    localStorage.setItem('kbData', JSON.stringify(kbData));
+    autoSave();
     const statusBtn = document.querySelector(`.status-btn[data-status="${newStatus}"]`);
     document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
     if (statusBtn) statusBtn.classList.add('active');
+    showSaveNotification('✅ Статус сохранён!');
   }
 }
 
 function deleteCard(id) {
   if (confirm('Вы уверены? Это действие необратимо.')) {
     kbData.data = kbData.data.filter(d => d.id !== id);
-    localStorage.setItem('kbData', JSON.stringify(kbData));
+    autoSave();
     closeModal();
     filterCards();
-    alert('✅ Карточка удалена!');
+    showSaveNotification('✅ Карточка удалена и сохранена!');
   }
 }
 
@@ -2081,7 +2241,10 @@ function loadFromStorage() {
 function resetToDefault() {
   if (confirm('Это вернёт все карточки к исходному состоянию. Вы уверены?')) {
     localStorage.removeItem('kbData');
-    location.reload();
+    showSaveNotification('✅ Данные сброшены к исходному состоянию!');
+    setTimeout(() => {
+      location.reload();
+    }, 2000);
   }
 }
 
