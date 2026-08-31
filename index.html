@@ -291,6 +291,184 @@
       color: #95A5A6;
     }
 
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .header {
+        padding: 2rem 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.8rem;
+      }
+
+      .header p {
+        font-size: 0.9rem;
+      }
+
+      .search-box {
+        max-width: 100%;
+        flex-direction: column;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+
+      .content {
+        padding: 1rem;
+        display: block;
+        min-height: auto;
+      }
+
+      .sidebar {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 60px;
+        width: 100%;
+        height: calc(100vh - 60px);
+        z-index: 50;
+        border-radius: 0;
+        max-height: 100%;
+        background: white;
+        border: none;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .sidebar.open {
+        display: block;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .card h3 {
+        font-size: 1rem;
+      }
+
+      .card p {
+        font-size: 0.8rem;
+      }
+
+      .modal-content {
+        padding: 1.5rem;
+        max-height: 90vh;
+        max-width: 95%;
+      }
+
+      .modal h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .modal-section h3 {
+        font-size: 0.95rem;
+      }
+
+      .modal-section p, .modal-section li {
+        font-size: 0.85rem;
+      }
+
+      #sidebar-toggle {
+        display: inline-block !important;
+      }
+
+      .status-btn {
+        padding: 0.4rem 0.7rem !important;
+        font-size: 0.8rem !important;
+        margin-right: 0.3rem !important;
+        margin-bottom: 0.5rem;
+      }
+
+      .copy-btn {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .header {
+        padding: 1.5rem 1rem;
+      }
+
+      .header p {
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .search-box {
+        padding: 0.4rem;
+      }
+
+      .search-box input {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .card-icon {
+        font-size: 1.5rem;
+      }
+
+      .modal-content {
+        padding: 1rem;
+        max-width: 100%;
+        margin: 0.5rem;
+      }
+
+      .modal-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 1.2rem;
+      }
+
+      .modal h2 {
+        font-size: 1.1rem;
+      }
+
+      .response-box {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .sidebar h3 {
+        font-size: 0.75rem;
+      }
+
+      .sidebar button {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .add-btn {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+      }
+
+      .status-btn {
+        padding: 0.3rem 0.5rem !important;
+        font-size: 0.7rem !important;
+        margin-right: 0.2rem !important;
+      }
+
+      [onclick*="deleteCard"] {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.7rem !important;
+      }
+    }
+
     .no-results p {
       font-size: 1.1rem;
       margin-bottom: 0.5rem;
@@ -548,6 +726,27 @@
       display: none;
     }
 
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      left: 1rem;
+      top: 1.5rem;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      z-index: 51;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .sidebar-toggle:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
     @media (max-width: 768px) { { { {
       .content {
         grid-template-columns: 1fr;
@@ -564,7 +763,58 @@
       .header h1 {
         font-size: 1.8rem;
       }
+    
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 1.5rem 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .header p {
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .cards-grid {
+        gap: 0.75rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .card-icon {
+        font-size: 1.5rem;
+      }
+
+      .card h3 {
+        font-size: 0.95rem;
+      }
+
+      .card p {
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .modal-content {
+        padding: 1rem;
+      }
+
+      .modal h2 {
+        font-size: 1.3rem;
+      }
+
+      .status-badge {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.75rem;
+      }
     }
+}
   </style>
 </head>
 <body>
@@ -575,6 +825,8 @@
     <h1>🔐 RedSMS KB</h1>
     <p>Введите пароль для доступа</p>
     <div class="login-error" id="login-error">Неверный пароль</div>
+
+<button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
     <input type="password" id="password-input" class="login-input" placeholder="Пароль" onkeypress="handleKeyPress(event)">
     <button class="login-btn" onclick="checkPassword()">Войти</button>
   </div>
@@ -1939,6 +2191,7 @@ function handleKeyPress(event) {
 function showMainContent() {
   document.getElementById('login-container').classList.add('hidden');
   document.getElementById('logout-btn').style.display = 'block';
+  document.getElementById('sidebar-toggle').style.display = 'inline-block';
   document.body.style.overflow = 'auto';
 }
 
@@ -1946,6 +2199,7 @@ function logout() {
   localStorage.removeItem('redsms_authenticated');
   document.getElementById('login-container').classList.remove('hidden');
   document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('sidebar-toggle').style.display = 'none';
   document.getElementById('password-input').value = '';
   document.body.style.overflow = 'hidden';
 }
@@ -1962,6 +2216,28 @@ function checkAuthentication() {
 
 // Check authentication on page load
 checkAuthentication();
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.classList.toggle('open');
+}
+
+// Close sidebar when clicking outside or selecting category
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelector('.sidebar').classList.remove('open');
+    });
+  });
+  
+  document.addEventListener('click', function(event) {
+    const sidebar = document.querySelector('.sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+    if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+      sidebar.classList.remove('open');
+    }
+  });
+});
 </script>
 </body>
 </html>
