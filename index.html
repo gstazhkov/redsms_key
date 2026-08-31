@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RedSMS Knowledge</title>
+  <title>RedSMS Knowledge Base</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -318,8 +318,11 @@
         flex: 1;
       }
 
-      .sidebar-toggle {
+      .sidebar-toggle,
+      .logout-btn {
         display: inline-block !important;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.9rem;
       }
 
       .search-box {
@@ -422,8 +425,11 @@
         margin-bottom: 0;
       }
 
-      .sidebar-toggle {
+      .sidebar-toggle,
+      .logout-btn {
         display: inline-block !important;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
       }
 
       .header p {
@@ -721,23 +727,23 @@
       box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
     }
 
-    .logout-btn {
+    .logout-btn, .sidebar-toggle {
+      display: none;
       position: static;
-      top: auto;
-      right: auto;
-      padding: 0.5rem 1rem;
       background: rgba(255,255,255,0.2);
-      border: 1px solid white;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.5rem 0.8rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 600;
       transition: all 0.2s;
-      color: white;
     }
 
-    .logout-btn:hover {
+    .logout-btn:hover, .sidebar-toggle:hover {
       background: rgba(255,255,255,0.3);
+      border-color: white;
     }
 
     .login-error {
@@ -745,24 +751,6 @@
       font-size: 0.9rem;
       margin-bottom: 1rem;
       display: none;
-    }
-
-    .sidebar-toggle {
-      display: none;
-      position: static;
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      padding: 0.5rem 0.75rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1.2rem;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .sidebar-toggle:hover {
-      background: rgba(255,255,255,0.3);
     }
 
     /* Save Notification Styles */
