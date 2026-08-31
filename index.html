@@ -448,7 +448,107 @@
       background: #D5DBDB;
     }
 
-    @media (max-width: 768px) { { {
+    .login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .login-container.hidden {
+      display: none;
+    }
+
+    .login-box {
+      background: white;
+      padding: 3rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-box h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #2C3E50;
+    }
+
+    .login-box p {
+      color: #7F8C8D;
+      margin-bottom: 2rem;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ECF0F1;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: #E74C3C;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      z-index: 999;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .login-error {
+      color: #E74C3C;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    @media (max-width: 768px) { { { {
       .content {
         grid-template-columns: 1fr;
       }
@@ -468,6 +568,18 @@
   </style>
 </head>
 <body>
+<button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выход</button>
+
+<div class="login-container" id="login-container">
+  <div class="login-box">
+    <h1>🔐 RedSMS KB</h1>
+    <p>Введите пароль для доступа</p>
+    <div class="login-error" id="login-error">Неверный пароль</div>
+    <input type="password" id="password-input" class="login-input" placeholder="Пароль" onkeypress="handleKeyPress(event)">
+    <button class="login-btn" onclick="checkPassword()">Войти</button>
+  </div>
+</div>
+
 <div class="container">
   <div class="header">
     <h1>📚 RedSMS Knowledge Base</h1>
@@ -1803,6 +1915,53 @@ function copyToClipboard(elementId, button) {
     alert('Ошибка копирования');
   });
 }
+
+function checkPassword() {
+  const password = document.getElementById('password-input').value;
+  const errorDiv = document.getElementById('login-error');
+  
+  if (password === 'redsms') {
+    localStorage.setItem('redsms_authenticated', 'true');
+    showMainContent();
+    errorDiv.style.display = 'none';
+  } else {
+    errorDiv.style.display = 'block';
+    document.getElementById('password-input').value = '';
+  }
+}
+
+function handleKeyPress(event) {
+  if (event.key === 'Enter') {
+    checkPassword();
+  }
+}
+
+function showMainContent() {
+  document.getElementById('login-container').classList.add('hidden');
+  document.getElementById('logout-btn').style.display = 'block';
+  document.body.style.overflow = 'auto';
+}
+
+function logout() {
+  localStorage.removeItem('redsms_authenticated');
+  document.getElementById('login-container').classList.remove('hidden');
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('password-input').value = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function checkAuthentication() {
+  const isAuthenticated = localStorage.getItem('redsms_authenticated') === 'true';
+  
+  if (isAuthenticated) {
+    showMainContent();
+  } else {
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// Check authentication on page load
+checkAuthentication();
 </script>
 </body>
 </html>
