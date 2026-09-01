@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedSMS Knowledge Base</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0; }
+
+    .header {
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+      flex: 1;
+    }
+
+    .header p {
+      font-size: 1rem;
+      opacity: 0.95;
+      margin-bottom: 2rem;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 500px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      background: rgba(255,255,255,0.95);
+      border-radius: 6px;
+      color: #2C3E50;
+    }
+
+    .search-box input::placeholder {
+      color: #95A5A6;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
+    }
+
+    .content {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      min-height: calc(100vh - 280px);
+    }
+
+    .sidebar {
+      background: #F8F9FA;
+      padding: 1.5rem;
+      border-radius: 8px;
+      height: fit-content;
+      border: 1px solid #ECF0F1;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #7F8C8D;
+      margin-bottom: 1rem;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar li {
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar button {
+      width: 100%;
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #34495E;
+      border-radius: 5px;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar button:hover {
+      background: #E8EAED;
+      border-left-color: #E74C3C;
+    }
+
+    .sidebar button.active {
+      background: white;
+      color: #E74C3C;
+      border-left-color: #E74C3C;
+      font-weight: 600;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #ECF0F1;
+      border-radius: 8px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #E74C3C;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      border-color: #E74C3C;
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2C3E50;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      color: #7F8C8D;
+      line-height: 1.5;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #95A5A6;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #E74C3C;
+    }
+
+    .modal h2 {
+      font-size: 1.8rem;
+      color: #2C3E50;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #E74C3C;
+    }
+
+    .modal-section {
+      margin-bottom: 2rem;
+    }
+
+    .modal-section h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #E74C3C;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-section h3:first-of-type {
+      margin-top: 0;
+    }
+
+    .modal-section p, .modal-section li {
+      color: #34495E;
+      line-height: 1.7;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .modal-section ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-section a {
+      color: #E74C3C;
+      text-decoration: none;
+    }
+
+    .modal-section a:hover {
+      text-decoration: underline;
+    }
+
+    .response-box {
+      background: #F8F9FA;
+      border-left: 3px solid #E74C3C;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-top: 0.75rem;
+      font-style: italic;
+      color: #34495E;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #95A5A6;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .header {
+        padding: 1.5rem 1rem;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0;
+        flex: 1;
+      }
+
+      .sidebar-toggle,
+      .logout-btn {
+        display: inline-block !important;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.9rem;
+      }
+
+      .search-box {
+        max-width: 100%;
+        flex-direction: column;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+
+      .content {
+        padding: 1rem;
+        display: block;
+        min-height: auto;
+      }
+
+      .sidebar {
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 60px;
+        width: 100%;
+        height: calc(100vh - 60px);
+        z-index: 50;
+        border-radius: 0;
+        max-height: 100%;
+        background: white;
+        border: none;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .sidebar.open {
+        display: block;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .card h3 {
+        font-size: 1rem;
+      }
+
+      .card p {
+        font-size: 0.8rem;
+      }
+
+      .modal-content {
+        padding: 1.5rem;
+        max-height: 90vh;
+        max-width: 95%;
+      }
+
+      .modal h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .modal-section h3 {
+        font-size: 0.95rem;
+      }
+
+      .modal-section p, .modal-section li {
+        font-size: 0.85rem;
+      }
+
+      .status-btn {
+        padding: 0.4rem 0.7rem !important;
+        font-size: 0.8rem !important;
+        margin-right: 0.3rem !important;
+        margin-bottom: 0.5rem;
+      }
+
+      .copy-btn {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 1rem;
+      }
+
+      .header-top {
+        gap: 0.3rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .header h1 {
+        font-size: 1.1rem;
+        margin-bottom: 0;
+      }
+
+      .sidebar-toggle,
+      .logout-btn {
+        display: inline-block !important;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .header p {
+        font-size: 0.75rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .search-box {
+        padding: 0.4rem;
+      }
+
+      .search-box input {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .card-icon {
+        font-size: 1.5rem;
+      }
+
+      .modal-content {
+        padding: 1rem;
+        max-width: 100%;
+        margin: 0.5rem;
+      }
+
+      .modal-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 1.2rem;
+      }
+
+      .modal h2 {
+        font-size: 1.1rem;
+      }
+
+      .response-box {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .sidebar h3 {
+        font-size: 0.75rem;
+      }
+
+      .sidebar button {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .add-btn {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+      }
+
+      .status-btn {
+        padding: 0.3rem 0.5rem !important;
+        font-size: 0.7rem !important;
+        margin-right: 0.2rem !important;
+      }
+
+      [onclick*="deleteCard"] {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.7rem !important;
+      }
+    }
+
+    .no-results p {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .status-badge.ready {
+      background: #D4EDDA;
+      color: #155724;
+    }
+
+    .status-badge.draft {
+      background: #FFF3CD;
+      color: #856404;
+    }
+
+    .status-badge.internal {
+      background: #D1ECF1;
+      color: #0C5460;
+    }
+
+    .copy-btn {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: #E74C3C;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #C0392B;
+      transform: scale(1.05);
+    }
+
+    .copy-btn.copied {
+      background: #27AE60;
+    }
+
+    .response-wrapper {
+      position: relative;
+    }
+
+    .add-new-btn {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1.5rem;
+      background: #27AE60;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .add-new-btn:hover {
+      background: #229954;
+    }
+
+    .status-btn {
+      padding: 0.5rem 1rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.75rem;
+      background: #ECF0F1;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .status-btn:hover {
+      border-color: #E74C3C;
+    }
+
+    .status-btn.active {
+      background: #E74C3C;
+      color: white;
+      border-color: #E74C3C;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #2C3E50;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ECF0F1;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .form-actions button {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-save {
+      background: #27AE60;
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: #229954;
+    }
+
+    .btn-cancel {
+      background: #ECF0F1;
+      color: #2C3E50;
+    }
+
+    .btn-cancel:hover {
+      background: #D5DBDB;
+    }
+
+    .login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .login-container.hidden {
+      display: none;
+    }
+
+    .login-box {
+      background: white;
+      padding: 3rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-box h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #2C3E50;
+    }
+
+    .login-box p {
+      color: #7F8C8D;
+      margin-bottom: 2rem;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ECF0F1;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: #E74C3C;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    .logout-btn, .sidebar-toggle {
+      display: none;
+      position: static;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.5rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover, .sidebar-toggle:hover {
+      background: rgba(255,255,255,0.3);
+      border-color: white;
+    }
+
+    .login-error {
+      color: #E74C3C;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    /* Save Notification Styles */
+    .save-notification {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #27AE60;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+      font-weight: 600;
+    }
+
+    .save-notification.error {
+      background: #E74C3C;
+    }
+
+    .save-notification.warning {
+      background: #F39C12;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .save-controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ECF0F1;
+    }
+
+    .save-controls button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      flex: 1;
+    }
+
+    .export-btn {
+      background: #3498DB;
+      color: white;
+    }
+
+    .export-btn:hover {
+      background: #2980B9;
+    }
+
+    .import-btn {
+      background: #9B59B6;
+      color: white;
+    }
+
+    .import-btn:hover {
+      background: #8E44AD;
+    }
+
+    #import-input {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .save-notification {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .save-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .save-controls button {
+        width: 100%;
+      }
+    }
+
+  </style>
+</head>
+<body>
+<div class="login-container" id="login-container">
+  <div class="login-box">
+    <h1>🔐 RedSMS KB</h1>
+    <p>Введите пароль для доступа</p>
+    <div class="login-error" id="login-error">Неверный пароль</div>
+    <input type="password" id="password-input" class="login-input" placeholder="Пароль" onkeypress="handleKeyPress(event)">
+    <button class="login-btn" onclick="checkPassword()">Войти</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
+      <h1>📚 RedSMS KW</h1>
+      <button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выход</button>
+    </div>
+    <p>Найдите ответ за секунды</p>
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Ищите по ключевому слову...">
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="sidebar">
+      <h3>Категории</h3>
+      <ul id="categories-list"></ul>
+      <button class="add-new-btn" onclick="openAddNewForm()">➕ Добавить карточку</button>
+      <div class="save-controls">
+        <button class="export-btn" onclick="syncFromServer()">🔄 Обновить с сервера</button>
+        <button class="export-btn" onclick="exportData()">📥 Экспорт</button>
+        <button class="import-btn" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
+        <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+      </div>
+    </div>
+
+    <div id="cards-container" class="cards-grid"></div>
+  </div>
+
+  <div id="add-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+      <h2>➕ Добавить новую карточку</h2>
+      <div id="add-form">
+        <div class="form-group">
+          <label>Название</label>
+          <input type="text" id="new-title" placeholder="Введите название карточки">
+        </div>
+        <div class="form-group">
+          <label>Описание</label>
+          <textarea id="new-description" placeholder="Введите описание"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Категория</label>
+          <select id="new-category"></select>
+        </div>
+        <div class="form-group">
+          <label>Статус</label>
+          <select id="new-status">
+            <option value="ready">Готово</option>
+            <option value="draft">Черновик</option>
+            <option value="internal">Внутреннее</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Текст ответа</label>
+          <textarea id="new-response" placeholder="Введите текст ответа"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="saveNewCard()">Сохранить</button>
+          <button class="btn-cancel" onclick="closeAddModal()">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div id="modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Embedded JSON data
+let kbData = {
+  "categories": [
+    {
+      "id": "all",
+      "label": "Все",
+      "icon": ""
+    },
+    {
+      "id": "бухгалтерия",
+      "label": "Бухгалтерия",
+      "icon": "💳"
+    },
+    {
+      "id": "лимиты-и-модерация",
+      "label": "Лимиты и модерация",
+      "icon": "📊"
+    },
+    {
+      "id": "пакеты-и-тарификация",
+      "label": "Пакеты и тарификация",
+      "icon": "💵"
+    },
+    {
+      "id": "договоры-эдо-возврат-средств",
+      "label": "Договоры, ЭДО, возврат средств",
+      "icon": "⚖️"
+    },
+    {
+      "id": "овердрафт",
+      "label": "Овердрафт",
+      "icon": "💰"
+    },
+    {
+      "id": "каскадная-отправка",
+      "label": "Каскадная отправка",
+      "icon": "🔀"
+    },
+    {
+      "id": "email-рассылки",
+      "label": "Email-рассылки",
+      "icon": "✉️"
+    },
+    {
+      "id": "отчёты",
+      "label": "Отчёты",
+      "icon": "📈"
+    },
+    {
+      "id": "юридические-вопросы",
+      "label": "Юридические вопросы",
+      "icon": "⚖️"
+    },
+    {
+      "id": "интеграции",
+      "label": "Интеграции",
+      "icon": "🔗"
+    },
+    {
+      "id": "pushok-sim-push",
+      "label": "PushOk (SIM-Push)",
+      "icon": "🔐"
+    },
+    {
+      "id": "имена-отправителей",
+      "label": "Имена отправителей",
+      "icon": "🏷️"
+    },
+    {
+      "id": "voice-голосовые-вызовы",
+      "label": "Voice (голосовые вызовы)",
+      "icon": "🔊"
+    },
+    {
+      "id": "hlr",
+      "label": "HLR",
+      "icon": "📶"
+    },
+    {
+      "id": "flash-call",
+      "label": "Flash Call",
+      "icon": "📞"
+    },
+    {
+      "id": "wait-call",
+      "label": "Wait Call",
+      "icon": "⏳"
+    },
+    {
+      "id": "подмена-текста-и-имён-отправителей",
+      "label": "Подмена текста и имён отправителей",
+      "icon": "🔁"
+    },
+    {
+      "id": "прочие-обращения",
+      "label": "Прочие обращения",
+      "icon": "🗂️"
+    },
+    {
+      "id": "http-api-техническая-документация",
+      "label": "HTTP API — техническая документация",
+      "icon": "⚙️"
+    },
+    {
+      "id": "базы-контактов-и-переменные",
+      "label": "Базы контактов и переменные",
+      "icon": "🗄️"
+    },
+    {
+      "id": "шаблоны-операторов",
+      "label": "Шаблоны операторов",
+      "icon": "📄"
+    },
+    {
+      "id": "настройки-личного-кабинета",
+      "label": "Настройки личного кабинета",
+      "icon": "🛠️"
+    }
+  ],
+  "data": [
+    {
+      "id": 1,
+      "title": "Запрос закрывающих документов / статистика по списаниям / вопросы по оплате",
+      "category": "бухгалтерия",
+      "status": "ready",
+      "description": "«Хотим запросить закрывающие документы за последнее пополнение баланса» · «Есть ли статистика по списаниям за имя отправителя — бухгалтерия",
+      "details": {
+        "trigger": "«Хотим запросить закрывающие документы за последнее пополнение баланса» · «Есть ли статистика по списаниям за имя отправителя — бухгалтерия запросила» · «Мы оплатили счёт 21 числа» · «Пополнили баланс, отправляю платёжное поручение»",
+        "action": "Если обращение пришло в Омнидеск — ставим в копию <b>buh@redsms.ru</b>. Если пишут в Jivo Chat — просим клиента самостоятельно написать на <b>buh@redsms.ru</b>.",
+        "response": "Добрый день!\nВаш вопрос передан в отдел бухгалтерии (buh@redsms.ru). В скором времени с вами свяжутся."
+      }
+    },
+    {
+      "id": 2,
+      "title": "Оплатили счёт, деньги не поступили в кабинет",
+      "category": "бухгалтерия",
+      "status": "ready",
+      "description": "«Добрый день, оплатили счёт {XXX} на {sum} рублей, деньги в кабинет не поступили»",
+      "details": {
+        "trigger": "«Добрый день, оплатили счёт {XXX} на {sum} рублей, деньги в кабинет не поступили»",
+        "action": "Пересылаем обращение из Омнидеска в <b>buh@redsms.ru</b>.",
+        "response": "Добрый день!\nВсе платежи обрабатываются бухгалтерией вручную в рабочие дни с 9:00 до 18:00 по МСК. Зачисление происходит после фактического поступления средств на расчётный счёт."
+      }
+    },
+    {
+      "id": 3,
+      "title": "Просьба повысить лимиты на отправку",
+      "category": "лимиты-и-модерация",
+      "status": "ready",
+      "description": "«Прошу повысить лимиты на отправку, текущие клиенты не получают СМС»",
+      "details": {
+        "trigger": "«Прошу повысить лимиты на отправку, текущие клиенты не получают СМС»",
+        "action": "Смотрим лимиты клиента по ссылке: <b>back.redsms.ru/admin/user/{ID}/general</b> — в первую очередь уникальный лимит и лимит на дубликаты.",
+        "response": "Добрый день!\nУточните, пожалуйста, какой лимит необходим?\nЛимиты можно увеличить в личном кабинете самостоятельно."
+      }
+    },
+    {
+      "id": 4,
+      "title": "Сообщения вечно висят на модерации",
+      "category": "лимиты-и-модерация",
+      "status": "internal",
+      "description": "Клиент жалуется, что рассылка не уходит / стоит на модерации подолгу.",
+      "details": {
+        "trigger": "Клиент жалуется, что рассылка не уходит / стоит на модерации подолгу.",
+        "action": "Проверяем, что именно отправляет клиент. Если контент в порядке — отключаем модерацию: <b>back.redsms.ru → клиент → Общие → Основные → Уровень модерации → Все</b>."
+      }
+    },
+    {
+      "id": 5,
+      "title": "«Почему у меня не уходят ни звонки, ни СМС?»",
+      "category": "лимиты-и-модерация",
+      "status": "ready",
+      "description": "Новый клиент, ничего не отправляется / задержка при первой отправке.",
+      "details": {
+        "trigger": "Новый клиент, ничего не отправляется / задержка при первой отправке.",
+        "action": "Проверить, включена ли ручная модерация (стандартно для новых клиентов).",
+        "response": "Для всех новых клиентов по умолчанию активирован режим ручной модерации. Пожалуйста, отправьте SMS-сообщение повторно. Задержек при отправке наблюдаться не будет.\n\nЧто касается звонков (Flash Call):\nFlashCall — это неофициальный способ доставки кодов, который работает в обход операторов связи. Операторы могут выявлять такие вызовы и блокировать их, так как этот метод снижает их доход от SMS. Поэтому гарантировать 100% успешную доставку звонков невозможно.\nНа текущий момент средний процент успешных вызовов на абонентов МТС составляет 90%, у других операторов — ниже, в диапазоне 40–60%.\n\nНаша рекомендация: использовать Flash Call в сочетании с SMS, реализовав каскадную отправку на вашей стороне:\n1. Если пользователь не получил звонок, он может нажать кнопку «Я не получил звонок, отправьте SMS».\n2. После этого ваша система инициирует отправку SMS.\nТакой подход позволит достичь практически 100% доставки кодов, сохранив при этом экономию на SMS-трафике."
+      }
+    },
+    {
+      "id": 6,
+      "title": "Проблема с конкретным номером +7XXXXXXXXXX, SMS не доходят (клиент не новый)",
+      "category": "лимиты-и-модерация",
+      "status": "ready",
+      "description": "Постоянный клиент, конкретный номер не получает сообщения, модерации на аккаунте нет.",
+      "details": {
+        "trigger": "Постоянный клиент, конкретный номер не получает сообщения, модерации на аккаунте нет.",
+        "action": "Проверяем детализацию по номеру — особенно если статус висит «в процессе».",
+        "response": "Добрый день!\nНами зафиксирована проблема с доставкой сообщения абоненту. Операторы связи в подобных ситуациях рекомендуют выполнить следующие действия:\n1. Проверить доступность устройства в сети.\n2. Убедиться в наличии свободного места на SIM-карте (если SMS сохраняются на неё, а не в память телефона).\n3. Проверить корректность регистрации устройства в сети, при необходимости перезагрузить его.\nПосле выполнения указанных шагов рекомендуем повторить отправку SMS."
+      }
+    },
+    {
+      "id": 7,
+      "title": "Подключение/отключение пакета SMS (только МегаФон)",
+      "category": "пакеты-и-тарификация",
+      "status": "internal",
+      "description": "Клиент просит подключить пакет СМС.",
+      "details": {
+        "trigger": "Клиент просит подключить пакет СМС.",
+        "action": "Пакеты доступны только у МегаФона. В кабинете клиента: <b>a2p.megalabs.ru/front_office/tariffication_packages/{ID}/edit → Пакеты СМС</b>. ⚠️ Пакет включается только со следующего месяца. Дублируем в <b>back.redsms.ru/admin/user/{ID}/prepaid-packages</b> → Имена отправителей → Предоплаченные пакеты → + Добавить пакет."
+      }
+    },
+    {
+      "id": 8,
+      "title": "«Почему у Билайн 1 СМС стоит 42 руб., а остальные 0 руб.?»",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "Вопрос о пакетной тарификации Билайн.",
+      "details": {
+        "trigger": "Вопрос о пакетной тарификации Билайн.",
+        "action": "Показать клиенту разбивку по конкретным сообщениям из детализации.",
+        "response": "Добрый день!\nУ оператора «Билайн» действует пакетная отправка SMS-сообщений — cp.redsms.ru/tariffs/sms/free\n\n— Списание за 1–5 сообщений — 42 рубля (взимается за 1-е).\n— Последующие 4 сообщения тарифицируются по 0 рублей.\n— 6-е сообщение — 18,61 руб.\n— Последующие 4 — по 0 руб.\n— 11-е сообщение — 34,87 руб.\n— Все последующие вплоть до 20-го — по 0 руб.\n— Начиная с 21-го каждое сообщение стоит 9,15 руб.\n\nЛогика: полная стоимость взимается раз в 5 сообщений (1-е, 6-е, 11-е, 16-е, 21-е…), остальные 4 из каждого блока — бесплатны."
+      }
+    },
+    {
+      "id": 9,
+      "title": "Вопросы по тарифам и ценам (общее)",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "«Сколько стоит SMS», «какой у нас тариф» и т.п.",
+      "details": {
+        "trigger": "«Сколько стоит SMS», «какой у нас тариф» и т.п.",
+        "action": "Техподдержка не имеет доступа к финансовым условиям клиента — направляем к менеджеру.",
+        "response": "Добрый день!\nПо всем вопросам, связанным с тарифами и ценами, вас может проконсультировать ваш менеджер. Техническая поддержка, к сожалению, не имеет доступа к вашим финансовым данным."
+      }
+    },
+    {
+      "id": 10,
+      "title": "Тариф на бесплатное имя отправителя",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "Клиент спрашивает стоимость отправки от бесплатного имени.",
+      "details": {
+        "trigger": "Клиент спрашивает стоимость отправки от бесплатного имени.",
+        "response": "Актуальные тарифы для отправки сообщений от бесплатного имени можно посмотреть на сайте или в личном кабинете: cp.redsms.ru/tariffs/sms/free"
+      }
+    },
+    {
+      "id": 11,
+      "title": "Почему изменилась стоимость SMS после пополнения баланса",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "«Раньше SMS стоило дешевле, а после пополнения баланса цена выросла — почему?»",
+      "details": {
+        "trigger": "«Раньше SMS стоило дешевле, а после пополнения баланса цена выросла — почему?»",
+        "links": [
+          [
+            "Документация: Тарифы и цены",
+            "https://docs.redsms.ru/knowledge-base/price/"
+          ]
+        ],
+        "response": "Добрый день!\nДля бесплатных и международных имён стоимость одного сообщения зависит от суммы пополнения баланса — действует сетка тарифов.\n\nПример: вы пополнили баланс на 50 000 ₽ — тариф зафиксируется как «50 000 ₽». Даже когда израсходуете большую часть средств и на балансе останется, например, 1 000 ₽, тариф останется прежним — «50 000 ₽».\n\nЕсли следующее пополнение окажется меньше порога, зафиксировавшего текущий тариф (например, пополнение всего на 1 000 ₽), тариф пересчитается по более низкой сетке — «1 000 ₽», и стоимость SMS вырастет.\n\nЧтобы сохранить прежнюю (более выгодную) ставку, пополняйте баланс суммой не меньше той, что зафиксировала текущий тариф."
+      }
+    },
+    {
+      "id": 12,
+      "title": "Можно ли использовать своё (индивидуальное) имя отправителя бесплатно у всех операторов",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "«За индивидуальное имя точно нужно платить абонентскую плату?»",
+      "details": {
+        "trigger": "«За индивидуальное имя точно нужно платить абонентскую плату?»",
+        "response": "Добрый день!\nДа, ваше индивидуальное имя отправителя можно использовать бесплатно у всех операторов, кроме МТС и МегаФон — по этим двум операторам за платное имя взимается ежемесячная абонентская плата."
+      }
+    },
+    {
+      "id": 13,
+      "title": "Почему списали деньги за недоставленные SMS-сообщения",
+      "category": "пакеты-и-тарификация",
+      "status": "ready",
+      "description": "«Сообщение не доставлено, а деньги списаны — это ошибка?»",
+      "details": {
+        "trigger": "«Сообщение не доставлено, а деньги списаны — это ошибка?»",
+        "links": [
+          [
+            "Документация: Почему списали деньги за недоставленные SMS",
+            "https://docs.redsms.ru/knowledge-base/question/sms_not_delivered/"
+          ]
+        ],
+        "response": "Добрый день!\nЭто не ошибка: операторы связи тарифицируют все отправленные сообщения независимо от их итогового статуса доставки. Списание происходит по факту отправки сообщения оператору, а не по факту его успешной доставки абоненту."
+      }
+    },
+    {
+      "id": 14,
+      "title": "Заключение договора / ЭДО / возврат / корректировки в договор",
+      "category": "договоры-эдо-возврат-средств",
+      "status": "ready",
+      "description": "«Не пришло приглашение в ЭДО» · «Присылают свой договор» · «Просят номер оферты» · «Когда ожидать договор» · «Запрос на возврат средств»",
+      "details": {
+        "trigger": "«Не пришло приглашение в ЭДО» · «Присылают свой договор» · «Просят номер оферты» · «Когда ожидать договор» · «Запрос на возврат средств»",
+        "action": "Уточняем у прикреплённого к клиенту менеджера текущий статус. Если менеджера нет — спрашиваем @Oknemoh.",
+        "response": "Добрый день!\nВаш менеджер отправил вам приглашение в ЭДО."
+      }
+    },
+    {
+      "id": 15,
+      "title": "Закрывающие документы — сроки и способ получения",
+      "category": "договоры-эдо-возврат-средств",
+      "status": "ready",
+      "description": "Клиент спрашивает про акты/УПД.",
+      "details": {
+        "trigger": "Клиент спрашивает про акты/УПД.",
+        "response": "Добрый день!\nЗакрывающие документы направляются до 15-го числа следующего месяца.\nБез ЭДО: оригиналы отправляются Почтой России по адресу из личного кабинета, сканы — на email бухгалтера.\nЧерез ЭДО: сообщите нам ваш идентификатор в ЭДО, и мы отправим приглашение, либо найдите нас по ID: 2AE4FE393E9-5D42-443E-8B73-F566C544B4CE (РЕДСМС)."
+      }
+    },
+    {
+      "id": 16,
+      "title": "Расторжение договора",
+      "category": "договоры-эдо-возврат-средств",
+      "status": "ready",
+      "description": "Клиент хочет расторгнуть договор / перестать пользоваться сервисом.",
+      "details": {
+        "trigger": "Клиент хочет расторгнуть договор / перестать пользоваться сервисом.",
+        "response": "Добрый день!\nНаличие активного договора не накладывает на вас обязательств — REDSMS не взимает абонентскую плату, вы можете не пользоваться сервисом без последствий. Договор можно оставить как есть либо направить письмо о расторжении.\nЕсли требуется возврат оставшихся средств, отправьте письмо на help@redsms.ru на официальном бланке организации, с подписью и печатью, указав логин, сумму к возврату и реквизиты."
+      }
+    },
+    {
+      "id": 17,
+      "title": "Запрос овердрафта на аккаунт",
+      "category": "овердрафт",
+      "status": "ready",
+      "description": "«Прошу подключить овердрафт на аккаунт {login} на {sum} тыс. рублей, платёж будет осуществлён {дата}» · «После рассылки закончились деньги н",
+      "details": {
+        "trigger": "«Прошу подключить овердрафт на аккаунт {login} на {sum} тыс. рублей, платёж будет осуществлён {дата}» · «После рассылки закончились деньги на счету, выдайте овердрафт»",
+        "action": "Уточняем статус согласования в тг-канале «Зачисления / Овердрафты» у @Irina.",
+        "response": "Добрый день!\nОвердрафт предоставлен!"
+      }
+    },
+    {
+      "id": 18,
+      "title": "Как настроить каскад",
+      "category": "каскадная-отправка",
+      "status": "ready",
+      "description": "Клиент спрашивает про каскадную отправку (SMS + Flash Call / Voice и т.д.)",
+      "details": {
+        "trigger": "Клиент спрашивает про каскадную отправку (SMS + Flash Call / Voice и т.д.)",
+        "links": [
+          [
+            "Документация: Каскад",
+            "https://docs.redsms.ru/http/send-message-cascade/"
+          ]
+        ],
+        "response": "Добрый день!\nНаправляем вам документацию по настройке каскадной отправки сообщений:\nhttps://docs.redsms.ru/http/send-message-cascade/\n\nОбращаем ваше внимание, что каскадную отправку можно настроить как самостоятельно (через API), так и автоматически — через Личный кабинет → Рассылки → Создание рассылки → Каскад.\n\nЕсли у вас возникнут вопросы, пожалуйста, сообщите — мы будем рады помочь."
+      }
+    },
+    {
+      "id": 19,
+      "title": "Как настроить рассылку по email",
+      "category": "email-рассылки",
+      "status": "draft",
+      "description": "Клиент спрашивает про email-канал.",
+      "details": {
+        "trigger": "Клиент спрашивает про email-канал.",
+        "action": "Функционал в переходном периоде, полный функционал в разработке. Баланс списывается из SMS-кабинета REDSMS. Переход: «Тариф» → Email → «Перейти в Email кабинет».",
+        "response": "Добрый день!\nНастройка email-рассылок доступна в личном кабинете: Рассылки → Создание рассылки → Email. Вы можете загрузить базу адресов, задать тему и содержание письма, а также запланировать время отправки.\n\nЕсли у вас возникнут сложности при настройке — уточните, пожалуйста, какой именно шаг вызывает вопрос, и мы поможем разобраться."
+      }
+    },
+    {
+      "id": 20,
+      "title": "Как получить отчёт по рассылкам / расходам",
+      "category": "отчёты",
+      "status": "draft",
+      "description": "Клиент просит отчёт по доставляемости, расходам, конкретному имени отправителя и т.д.",
+      "details": {
+        "trigger": "Клиент просит отчёт по доставляемости, расходам, конкретному имени отправителя и т.д.",
+        "links": [
+          [
+            "Документация: Отчёты",
+            "https://docs.redsms.ru/knowledge-base/reports/"
+          ]
+        ],
+        "response": "Добрый день!\nПодробная информация обо всех доступных отчётах и их настройке представлена в документации: https://docs.redsms.ru/knowledge-base/reports/\n\nЕсли подскажете, какой именно отчёт вас интересует (по доставляемости, по расходам, по конкретному имени отправителя и т.д.) — поможем разобраться детальнее."
+      }
+    },
+    {
+      "id": 21,
+      "title": "Юридические вопросы по договору/сотрудничеству",
+      "category": "юридические-вопросы",
+      "status": "ready",
+      "description": "Любые вопросы юридического характера.",
+      "details": {
+        "trigger": "Любые вопросы юридического характера.",
+        "action": "Всё пересылаем на legal@redsms.ru.",
+        "response": "Добрый день!\nВаш вопрос направлен в юридический отдел. Пожалуйста, ожидайте обратной связи — мы свяжемся с вами в ближайшее время.\nЕсли потребуются уточнения, вы можете написать нам на почту: legal@redsms.ru."
+      }
+    },
+    {
+      "id": 22,
+      "title": "Готовые интеграции / индивидуальная интеграция под заказ",
+      "category": "интеграции",
+      "status": "ready",
+      "description": "Клиент просит подключить CRM, платёжную систему, e-commerce платформу и т.д.",
+      "details": {
+        "trigger": "Клиент просит подключить CRM, платёжную систему, e-commerce платформу и т.д.",
+        "action": "Индивидуальные интеграции под заказ не разрабатываются — направляем на готовые решения.",
+        "links": [
+          [
+            "Готовые интеграции",
+            "https://docs.redsms.ru/integration/"
+          ]
+        ],
+        "response": "Добрый день!\nМы предлагаем обширный набор готовых интеграций — ознакомиться с ними можно по ссылке: https://docs.redsms.ru/integration/\nК сожалению, мы не выполняем настройку и разработку индивидуальных интеграций под заказ. Однако вы всегда можете воспользоваться нашими готовыми решениями."
+      }
+    },
+    {
+      "id": 23,
+      "title": "Подключение интеграции с Yclients",
+      "category": "интеграции",
+      "status": "internal",
+      "description": "Клиент из Yclients хочет подключить REDSMS для уведомлений.",
+      "details": {
+        "trigger": "Клиент из Yclients хочет подключить REDSMS для уведомлений.",
+        "action": "1) Заключить договор (Документы → Заключить договор). 2) В Yclients: раздел «Интеграции» → найти «REDSMS.RU» → установить. 3) Клиент присылает Salon ID (6 цифр из URL yclients.com/clients/XXXXXX/) — интегрируем аккаунты вручную. 4) Клиент настраивает в Yclients, какие уведомления отправлять по SMS."
+      }
+    },
+    {
+      "id": 24,
+      "title": "«Как работает PushOk?» / вопрос про безопасность",
+      "category": "pushok-sim-push",
+      "status": "ready",
+      "description": "Клиент спрашивает про механику и безопасность SIM-Push верификации.",
+      "details": {
+        "trigger": "Клиент спрашивает про механику и безопасность SIM-Push верификации.",
+        "response": "Добрый день!\nТехнически PushOk работает как исходящий звонок, инициируемый через API REDSMS. Клиент не принимает звонок и не слушает сообщение, а сбрасывает вызов. REDSMS сверяет номер звонящего (Caller ID) с тем, который был передан в запросе, и возвращает результат верификации.\n\nБезопасность обеспечивается на двух уровнях:\n\n1) Инфраструктурная безопасность REDSMS — аутентификация по API (логин, временная метка ts, secret = MD5(ts + api_key)); белый список IP-адресов; лимит на дубликаты; общие лимиты на количество сообщений; проверка баланса и месячного лимита расходов.\n\n2) Логическая безопасность на стороне клиента — сопоставление uuid сессии верификации с конкретной транзакцией; корректная обработка несовпадения номеров (отказ в операции или запрос альтернативного способа верификации).\n\nPushOk идеально подходит для двухфакторной аутентификации без ввода кода вручную."
+      }
+    },
+    {
+      "id": 25,
+      "title": "«Хочу разработать модуль PushOk для своего сайта, что нужно?»",
+      "category": "pushok-sim-push",
+      "status": "draft",
+      "description": "Разработчик клиента просит техническое ТЗ по интеграции PushOk.",
+      "details": {
+        "trigger": "Разработчик клиента просит техническое ТЗ по интеграции PushOk.",
+        "response": "Добрый день!\nДля интеграции PushOk на вашей стороне понадобится:\n1. Логин и API-ключ — выдаются в личном кабинете.\n2. Реализовать запрос к API REDSMS с параметром route=pushok, передав номер телефона и текст сообщения.\n3. Настроить аутентификацию запроса — сформировать secret как MD5-хеш от временной метки (ts) и вашего API-ключа.\n4. Обработать результат (звонок принят/сброшен) и сопоставить его с вашей транзакцией через uuid сессии верификации.\n\nЕсли появятся вопросы при интеграции — обращайтесь, поможем."
+      }
+    },
+    {
+      "id": 26,
+      "title": "Регистрация бесплатного имени отправителя",
+      "category": "имена-отправителей",
+      "status": "internal",
+      "description": "Клиент просит зарегистрировать/одобрить новое бесплатное имя.",
+      "details": {
+        "trigger": "Клиент просит зарегистрировать/одобрить новое бесплатное имя.",
+        "action": "В тг-канале RED.RU: если обращение на бесплатное имя (уникальное, приличное, не общедоступное) — одобряем."
+      }
+    },
+    {
+      "id": 27,
+      "title": "Снятие / отключение платного имени",
+      "category": "имена-отправителей",
+      "status": "internal",
+      "description": "Клиент просит отключить платное имя отправителя.",
+      "details": {
+        "trigger": "Клиент просит отключить платное имя отправителя.",
+        "action": "В личном кабинете пользователя отключаем платное имя."
+      }
+    },
+    {
+      "id": 28,
+      "title": "Процесс регистрации платного (персонального) имени — общая инструкция",
+      "category": "имена-отправителей",
+      "status": "ready",
+      "description": "Клиент спрашивает, как зарегистрировать имя своей компании/бренда.",
+      "details": {
+        "trigger": "Клиент спрашивает, как зарегистрировать имя своей компании/бренда.",
+        "response": "Добрый день!\nДля регистрации персонального имени отправителя потребуется:\n1. Один из документов: свидетельство о регистрации компании (ИНН/ОГРН), свидетельство о праве на домен, свидетельство на товарный знак или договор франшизы. Если правообладатель в документе — не вы, потребуется письмо-согласие.\n2. Раздел «Регистрация имён» в личном кабинете → выбираете оператора (МТС, МегаФон, Билайн, Tele2 и др.).\n3. Заполняете заявку, прикрепляете документы, указываете имя отправителя и нажимаете «Отправить».\n4. Ожидаете одобрения оператора.\n\nСроки регистрации: МегаФон и Tele2 — 7 рабочих дней, МТС — 10 рабочих дней, Билайн — до 15 рабочих дней.\n\nОбратите внимание: МТС и МегаФон не предоставляют бесплатную регистрацию персональных имён — по этим операторам взимается абонентская плата (обычно 500–1000 руб./месяц)."
+      }
+    },
+    {
+      "id": 29,
+      "title": "Отмена имени отправителя — почему имя пропало без запроса клиента",
+      "category": "имена-отправителей",
+      "status": "ready",
+      "description": "Клиент недоумевает, почему платное имя перестало работать/было отменено.",
+      "details": {
+        "trigger": "Клиент недоумевает, почему платное имя перестало работать/было отменено.",
+        "action": "Проверить дату — автоматическая отмена происходит 20–25 числа месяца, если системе не удалось списать плату за имя из-за нехватки баланса.",
+        "response": "Добрый день!\nАвтоматическая отмена платного имени происходит, если 20–25 числа месяца на балансе недостаточно средств для списания абонентской платы за имя — в этом случае заявка на имя автоматически аннулируется у оператора.\nРекомендуем следить за тем, чтобы баланс был достаточен с 20 по 25 число каждого месяца, чтобы избежать повторной отмены. При необходимости мы поможем повторно зарегистрировать имя."
+      }
+    },
+    {
+      "id": 30,
+      "title": "Каким именем пользоваться до регистрации своего / лимит тестового имени",
+      "category": "имена-отправителей",
+      "status": "ready",
+      "description": "Новый клиент спрашивает, чем отправлять сообщения, пока своё имя не зарегистрировано.",
+      "details": {
+        "trigger": "Новый клиент спрашивает, чем отправлять сообщения, пока своё имя не зарегистрировано.",
+        "links": [
+          [
+            "Документация: Типы имён отправителей",
+            "https://docs.redsms.ru/knowledge-base/sender-names/types/"
+          ]
+        ],
+        "response": "Добрый день!\nПо умолчанию всем клиентам доступно общее тестовое имя REDSMS.RU — с него можно отправлять до 30 SMS-сообщений в сутки. Его удобно использовать для тестирования сервиса и до момента заключения договора.\nПосле заключения договора рекомендуем зарегистрировать индивидуальное имя отправителя — это снимает суточное ограничение в 30 сообщений.\nОтдельно от SMS, для каналов Voice и Viber также предусмотрены свои общие имена, доступные по умолчанию."
+      }
+    },
+    {
+      "id": 31,
+      "title": "Регистрация имени отправителя для ВКонтакте",
+      "category": "имена-отправителей",
+      "status": "ready",
+      "description": "Клиент просит подключить рассылку сообщений от имени сообщества ВКонтакте.",
+      "details": {
+        "trigger": "Клиент просит подключить рассылку сообщений от имени сообщества ВКонтакте.",
+        "links": [
+          [
+            "Документация: Регистрация имени для VK",
+            "https://docs.redsms.ru/knowledge-base/sender-names/vk/"
+          ]
+        ],
+        "response": "Добрый день!\nДля регистрации имени отправителя VK:\n1. Раздел «Имена отправителей» → «Добавить новое имя» → ВКонтакте.\n2. Введите ключ доступа сообщества → «Продолжить».\n3. Введите имя отправителя → «Продолжить». Обратите внимание: это имя используется только при формировании запросов по API, сам пользователь его не увидит — отправка будет идти от имени вашей группы.\n4. Подготовьте письмо-заявку: распечатайте, подпишите, поставьте печать организации, загрузите скан документа в форму.\n5. Нажмите «Отправить на модерацию»."
+      }
+    },
+    {
+      "id": 32,
+      "title": "Voice-звонок не доходит / блокируется",
+      "category": "voice-голосовые-вызовы",
+      "status": "ready",
+      "description": "Клиент жалуется, что голосовой вызов не поступает абоненту.",
+      "details": {
+        "trigger": "Клиент жалуется, что голосовой вызов не поступает абоненту.",
+        "links": [
+          [
+            "Документация: Voice",
+            "https://docs.redsms.ru/knowledge-base/dispatches/voice/"
+          ]
+        ],
+        "response": "Добрый день!\nЧто касается Voice-звонков: они также могут блокироваться как на стороне операторов связи, так и антиспам-системами, установленными на устройствах абонентов.\nhttps://docs.redsms.ru/knowledge-base/dispatches/voice/"
+      }
+    },
+    {
+      "id": 33,
+      "title": "Как тарифицируются Voice-звонки",
+      "category": "voice-голосовые-вызовы",
+      "status": "ready",
+      "description": "«Почему за один и тот же голосовой вызов списывается разная сумма?»",
+      "details": {
+        "trigger": "«Почему за один и тот же голосовой вызов списывается разная сумма?»",
+        "response": "Добрый день!\nТарификация голосовых вызовов (Voice) посекундная — стоимость зависит от фактической длительности разговора, а не является фиксированной за вызов."
+      }
+    },
+    {
+      "id": 34,
+      "title": "«Расскажите об HLR»",
+      "category": "hlr",
+      "status": "ready",
+      "description": "Общий вопрос про механику и назначение HLR-проверки.",
+      "details": {
+        "trigger": "Общий вопрос про механику и назначение HLR-проверки.",
+        "links": [
+          [
+            "Документация: HLR",
+            "https://docs.redsms.ru/knowledge-base/dispatches/hlr/"
+          ]
+        ],
+        "response": "Добрый день!\nHLR-запрос позволяет выявить, был ли абонент активен в сети на протяжении предыдущих 12 часов. Он помогает очистить базу контактов от неактивных номеров, оставляя только «живые». Проверка происходит незаметно для абонентов — они не получают никаких уведомлений.\nПри отправке запроса на городской номер вы получите в ответ статус «Некорректный номер».\nПокрытие доступно по всему миру, однако некоторые направления лучше тестировать на практике.\nПодробная инструкция по настройке HLR-запроса: https://docs.redsms.ru/knowledge-base/dispatches/hlr/"
+      }
+    },
+    {
+      "id": 35,
+      "title": "«Нужен ли договор для использования HLR?»",
+      "category": "hlr",
+      "status": "ready",
+      "description": "Клиент спрашивает про необходимость договора.",
+      "details": {
+        "trigger": "Клиент спрашивает про необходимость договора.",
+        "response": "Добрый день!\nДля использования функционала отправки HLR договор не нужен."
+      }
+    },
+    {
+      "id": 36,
+      "title": "«Не работает HLR» — подтверждён сбой на стороне поставщика",
+      "category": "hlr",
+      "status": "draft",
+      "description": "Клиент жалуется на некорректную работу HLR, проверка логов подтвердила сбой.",
+      "details": {
+        "trigger": "Клиент жалуется на некорректную работу HLR, проверка логов подтвердила сбой.",
+        "action": "Смотрим детализацию и логи, пишем поставщику в тг-группу HLR|REDSMS.",
+        "response": "Добрый день!\nМы проверили детализацию по вашим HLR-запросам и подтверждаем технический сбой на стороне поставщика услуги. Информация уже передана поставщику, ведутся работы по устранению. Как только сбой будет исправлен, мы вас уведомим.\nПриносим извинения за временные неудобства."
+      }
+    },
+    {
+      "id": 37,
+      "title": "«Не работает HLR» — выявлены «фейковые» статусы",
+      "category": "hlr",
+      "status": "draft",
+      "description": "Статусы HLR расходятся с фактической активностью абонентов.",
+      "details": {
+        "trigger": "Статусы HLR расходятся с фактической активностью абонентов.",
+        "response": "Добрый день!\nМы проверили ваши HLR-запросы и подтверждаем расхождение возвращаемых статусов с фактической активностью абонентов. Данные переданы поставщику услуги для уточнения причин и корректировки алгоритма проверки.\nЕсли необходимо перепроверить конкретные номера — пришлите, пожалуйста, их список вместе с датой/временем запроса, и мы уточним статус по каждому."
+      }
+    },
+    {
+      "id": 38,
+      "title": "«Не работает HLR» — проблема не подтвердилась",
+      "category": "hlr",
+      "status": "draft",
+      "description": "По результатам проверки логов сбоев не выявлено.",
+      "details": {
+        "trigger": "По результатам проверки логов сбоев не выявлено.",
+        "response": "Добрый день!\nМы проверили детализацию по вашим HLR-запросам — сбоев и отклонений в работе сервиса не выявлено, все запросы обрабатываются корректно.\nЕсли проблема продолжает наблюдаться, пришлите, пожалуйста, конкретные номера и время запросов — проверим более детально."
+      }
+    },
+    {
+      "id": 39,
+      "title": "«Как проверить абонентов на активность?» — пошаговая инструкция",
+      "category": "hlr",
+      "status": "ready",
+      "description": "Клиент просит инструкцию по запуску HLR-проверки.",
+      "details": {
+        "trigger": "Клиент просит инструкцию по запуску HLR-проверки.",
+        "response": "Добрый день!\n1. Раздел Рассылки → Создать рассылку → HLR.\n2. Введите номера вручную или выберите базу контактов.\n3. Нажмите «Запустить проверку».\n\nСтатусы результатов:\n— Доставлено — номер активен, абонент в сети.\n— Не доставлено — номер не активен.\n— В процессе — номер активен, но абонент в данный момент не в сети."
+      }
+    },
+    {
+      "id": 40,
+      "title": "HLR показал, что абонент активен, но SMS всё равно не доставляется",
+      "category": "hlr",
+      "status": "ready",
+      "description": "«HLR говорит, что номер в сети, а SMS не доходит — как так?»",
+      "details": {
+        "trigger": "«HLR говорит, что номер в сети, а SMS не доходит — как так?»",
+        "links": [
+          [
+            "Документация: Отправка HLR",
+            "https://docs.redsms.ru/http/send-message-hlr/"
+          ]
+        ],
+        "response": "Добрый день!\nВ некоторых случаях HLR-запрос может показать, что абонент активен в сети, однако доставки SMS всё равно не произойдёт — например, если у абонента отключена услуга приёма SMS-сообщений на уровне оператора. Это не связано со сбоем: HLR проверяет именно доступность номера в сети, а не доступность конкретного канала SMS.\nПо умолчанию срок жизни самого HLR-запроса — 24 часа."
+      }
+    },
+    {
+      "id": 41,
+      "title": "Проблемы доставки Flash Call / статус «Доставлено», но звонок не поступил",
+      "category": "flash-call",
+      "status": "ready",
+      "description": "«Не подтверждается звонок» · «Нет статистики» · «Статус Доставлено, но звонок реально не поступает» · любые вопросы по подключению FCall.",
+      "details": {
+        "trigger": "«Не подтверждается звонок» · «Нет статистики» · «Статус Доставлено, но звонок реально не поступает» · любые вопросы по подключению FCall.",
+        "action": "Трафик может идти через 2 подключения — Seven и МСН Телеком. При технических проблемах пишем на support@seven.tech, info@mcn.ru.",
+        "links": [
+          [
+            "Документация: Flash Call",
+            "https://docs.redsms.ru/http/send-message-fcall/"
+          ]
+        ],
+        "response": "Добрый день!\nFlash Call — это неофициальный способ доставки кодов, который работает в обход операторов связи. Операторы могут выявлять такие вызовы и блокировать их, так как этот метод снижает их доход от SMS. Поэтому невозможно гарантировать 100% успешную доставку звонков.\nНа текущий момент средний процент успешных вызовов на абонентов МТС составляет 90%, у остальных операторов — ниже, в пределах 40–60%.\n\nМы рекомендуем использовать Flash Call в сочетании с SMS, реализовав каскадную отправку на вашей стороне. Например:\n1. Если пользователь не получил звонок, он может нажать «Я не получил звонок, отправьте SMS».\n2. После этого система инициирует отправку SMS.\nТакой подход позволит существенно повысить процент доставки кодов, сохранив при этом экономию на SMS.\n\nОзнакомиться с процессом подключения и настройки можно по ссылке: https://docs.redsms.ru/http/send-message-fcall/"
+      }
+    },
+    {
+      "id": 42,
+      "title": "Какие страны поддерживает Flash Call",
+      "category": "flash-call",
+      "status": "ready",
+      "description": "«Подскажите, пожалуйста, какие страны поддерживает услуга flash call?»",
+      "details": {
+        "trigger": "«Подскажите, пожалуйста, какие страны поддерживает услуга flash call?»",
+        "response": "Добрый день!\nАзербайджан, Армения, Бангладеш, Грузия, Израиль, Индия, Индонезия, Иран, Камбоджа, Кыргызстан, Малайзия, Мьянма, Пакистан, Саудовская Аравия, Таджикистан, Таиланд, Туркменистан, Турция, Узбекистан, Филиппины, Алжир, Бенин, Буркина-Фасо, Египет, Кот-д'Ивуар, Намибия, Нигерия, Уганда, Эфиопия, Болгария, Венгрия, Германия, Греция, Латвия, Литва, Молдова, Объединённое Королевство, Польша, Российская Федерация, Украина, Финляндия, Франция, Швеция, Гренада, Куба, Аргентина, Боливия, Бразилия."
+      }
+    },
+    {
+      "id": 43,
+      "title": "Подозрение на фрод по FCall (от SevenTech)",
+      "category": "flash-call",
+      "status": "draft",
+      "description": "Рост кодового трафика FCall с дублями на один и тот же номер.",
+      "details": {
+        "trigger": "Рост кодового трафика FCall с дублями на один и тот же номер.",
+        "action": "Если это просто рост дублей на один номер — ничего не делаем. Если картина выглядит подозрительно (нетипично высокая частота одинаковых запросов) — уточняем у клиента.",
+        "response": "Добрый день!\nМы заметили подозрительную активность — с вашего аккаунта генерируется большое количество запросов на повторяющиеся номера. Например:\n79056088881 — 2026-08-24 08:56:00 — NaVse100 (повторяется несколько раз)\n\nПодскажите, ситуация штатная?"
+      }
+    },
+    {
+      "id": 44,
+      "title": "Не работает Wait Call с озвучиванием кода",
+      "category": "wait-call",
+      "status": "ready",
+      "description": "Клиент жалуется, что диктовка кода в Wait Call перестала работать.",
+      "details": {
+        "trigger": "Клиент жалуется, что диктовка кода в Wait Call перестала работать.",
+        "action": "Поддержка режима с озвучиванием кода прекращена с 1 мая 2026 года — дополнительные действия не требуются.",
+        "links": [
+          [
+            "Документация: Wait Call",
+            "https://docs.redsms.ru/http/send-message-wait-call/"
+          ]
+        ],
+        "response": "Благодарим за ожидание.\nПоддержка услуги Wait Call в режиме с озвучиванием кода прекращена.\nРанее мы рекомендовали с 1 мая 2026 года отключить отправку трафика в данном режиме и перейти на использование Wait Call без озвучивания кода. Однако часть запросов продолжала обрабатываться в прежнем формате до момента окончательного отключения услуги.\n\nРекомендуем:\n— перейти на режим Wait Call без озвучивания кода. Подробнее: https://docs.redsms.ru/http/send-message-wait-call/\n— либо использовать другой канал доставки кодов: SMS, Telegram, Flash Call и другие доступные способы.\n\nПожалуйста, проверьте текущие настройки вашей интеграции. Если появятся вопросы — будем рады помочь."
+      }
+    },
+    {
+      "id": 45,
+      "title": "Просьба открыть доступ к Wait Call без заключения договора",
+      "category": "wait-call",
+      "status": "ready",
+      "description": "Клиент просит включить Wait Call, не желая заключать договор.",
+      "details": {
+        "trigger": "Клиент просит включить Wait Call, не желая заключать договор.",
+        "action": "Доступ к Wait Call выдаётся без заключения договора. У каждого клиента есть галочка «Основные → Доступ открыт».",
+        "response": "Здравствуйте\nДоступ для отправки wcall открыт."
+      }
+    },
+    {
+      "id": 46,
+      "title": "Как подключить Wait Call",
+      "category": "wait-call",
+      "status": "ready",
+      "description": "Клиент спрашивает про интеграцию Wait Call.",
+      "details": {
+        "trigger": "Клиент спрашивает про интеграцию Wait Call.",
+        "links": [
+          [
+            "Документация: Wait Call",
+            "https://docs.redsms.ru/http/send-message-wait-call/"
+          ]
+        ],
+        "response": "Добрый день!\nПодробные инструкции по реализации доступны в нашей документации: https://docs.redsms.ru/http/send-message-wait-call/\nАвторизация пользователя может выполняться на основании полученного статуса «Доставлено». Логика авторизации полностью определяется на вашей стороне.\nПо вопросам стоимости просим обращаться к нашему менеджеру. Пожалуйста, укажите контактный номер телефона для связи."
+      }
+    },
+    {
+      "id": 47,
+      "title": "Клиент видит подмену имени отправителя на другое (например, Info/Advance)",
+      "category": "подмена-текста-и-имён-отправителей",
+      "status": "ready",
+      "description": "Клиент использует несколько имён и замечает, что вместо его имени приходит другое.",
+      "details": {
+        "trigger": "Клиент использует несколько имён и замечает, что вместо его имени приходит другое.",
+        "response": "Вы используете 2 имени, одно из них бесплатное. При отправке сообщения от бесплатного имени происходит автозамена у операторов: у МегаФон — всегда, у МТС — только для кодовых (авторизационных) сообщений. Это нормально и не является ошибкой."
+      }
+    },
+    {
+      "id": 48,
+      "title": "Маркетинговое предложение / предложение о сотрудничестве",
+      "category": "прочие-обращения",
+      "status": "internal",
+      "description": "Входящее письмо с коммерческим предложением, партнёрством и т.п.",
+      "details": {
+        "trigger": "Входящее письмо с коммерческим предложением, партнёрством и т.п.",
+        "action": "Если это реальное предложение о сотрудничестве — передаём менеджеру (Настя). Если это спам-рассылка — в спам."
+      }
+    },
+    {
+      "id": 49,
+      "title": "Сайт/сервис недоступен",
+      "category": "прочие-обращения",
+      "status": "internal",
+      "description": "Клиент сообщает о недоступности личного кабинета/сайта.",
+      "details": {
+        "trigger": "Клиент сообщает о недоступности личного кабинета/сайта.",
+        "action": "Передаём в DevOps."
+      }
+    },
+    {
+      "id": 50,
+      "title": "Личный кабинет недоступен при включённом VPN",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Клиент сообщает об ошибке доступа при использовании VPN.",
+      "details": {
+        "trigger": "Клиент сообщает об ошибке доступа при использовании VPN.",
+        "response": "Добрый день!\nПри использовании VPN возможны ошибки доступа к личному кабинету. Пожалуйста, отключите VPN — это должно решить проблему."
+      }
+    },
+    {
+      "id": 51,
+      "title": "Запрос на удаление аккаунта",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "«Прошу удалить мой аккаунт, так как я частное лицо, случайно зарегистрировался»",
+      "details": {
+        "trigger": "«Прошу удалить мой аккаунт, так как я частное лицо, случайно зарегистрировался»",
+        "action": "Проверяем: как давно зарегистрирован аккаунт, действительно ли это частное лицо, нет ли прикреплённого менеджера.",
+        "response": "Добрый день!\nАккаунт будет удалён.\nЕсли вдруг станете ИП или захотите от лица организации заключить договор, мы будем рады взаимодействовать."
+      }
+    },
+    {
+      "id": 52,
+      "title": "Ошибка «bad number» при отправке",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Клиент получает ошибку по номеру получателя.",
+      "details": {
+        "trigger": "Клиент получает ошибку по номеру получателя.",
+        "response": "Добрый день!\nОшибка «bad number» означает, что номер передан в неверном формате. REDSMS принимает номера в формате +7, 7 или 8 (для РФ) — без пропущенных цифр и без посторонних символов. Проверьте, что номер полностью соответствует стандарту E.164, и повторите отправку."
+      }
+    },
+    {
+      "id": 53,
+      "title": "Ошибка 401 Unauthorized в API",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Разработчик клиента сообщает об ошибке авторизации при запросах к API.",
+      "details": {
+        "trigger": "Разработчик клиента сообщает об ошибке авторизации при запросах к API.",
+        "response": "Добрый день!\nОшибка 401 обычно возникает по одной из причин:\n1. API-ключ был обновлён, но secret рассчитывается по старому значению.\n2. Неверно рассчитан secret — он должен быть MD5-хешем от строки ts + api_key, без пробелов.\n3. Значение ts не совпадает с текущим временем.\n\nПроверьте расчёт secret, актуальность API-ключа и корректность ts."
+      }
+    },
+    {
+      "id": 54,
+      "title": "Ошибка 404 Not Found в API",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Разработчик клиента получает 404 при запросе к API.",
+      "details": {
+        "trigger": "Разработчик клиента получает 404 при запросе к API.",
+        "response": "Добрый день!\nОшибка 404 обычно означает некорректный URL запроса. Убедитесь, что URL не заканчивается символом «/», и проверьте адрес эндпоинта по документации."
+      }
+    },
+    {
+      "id": 55,
+      "title": "Сообщение показывает статус «Доставлено», но абонент утверждает, что не получил его",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Частый вопрос: расхождение между статусом системы и словами абонента.",
+      "details": {
+        "trigger": "Частый вопрос: расхождение между статусом системы и словами абонента.",
+        "response": "Добрый день!\nСтатус «Доставлено» подтверждается самим телефоном абонента, поэтому ему можно доверять — сообщение технически поступило на устройство. Причина, по которой оно не отобразилось, может быть на стороне телефона:\n1. Сообщение могло попасть в папку «Нежелательные»/«Спам» — это происходит автоматически на основании анализа текста и массовых жалоб других пользователей.\n2. Возможен сбой на самом устройстве — рекомендуем очистить память SIM-карты, перезагрузить телефон и повторить отправку.\n3. Проблема может быть связана с устаревшей версией ОС или SMS-клиента.\n\nПопросите абонента проверить папку «Нежелательные сообщения»."
+      }
+    },
+    {
+      "id": 56,
+      "title": "«Просрочено» — сообщение не доставлено по истечении срока жизни",
+      "category": "прочие-обращения",
+      "status": "ready",
+      "description": "Клиент видит статус «Просрочено» в детализации.",
+      "details": {
+        "trigger": "Клиент видит статус «Просрочено» в детализации.",
+        "response": "Добрый день!\nСтатус «Просрочено» означает, что абонент был недоступен (вне сети) дольше, чем срок жизни сообщения — по умолчанию 24 часа. По истечении этого срока оператор прекращает попытки доставки.\nСрок жизни можно изменить в диапазоне от 1 минуты до 24 часов — если хотите, подскажем, как это настроить."
+      }
+    },
+    {
+      "id": 57,
+      "title": "Как настроить Webhook для получения статусов сообщений",
+      "category": "http-api-техническая-документация",
+      "status": "ready",
+      "description": "«Хотим получать статусы сообщений автоматически, без постоянного опроса API»",
+      "details": {
+        "trigger": "«Хотим получать статусы сообщений автоматически, без постоянного опроса API»",
+        "links": [
+          [
+            "Документация: Webhook",
+            "https://docs.redsms.ru/http/webhook/"
+          ]
+        ],
+        "response": "Добрый день!\nПри использовании Webhook нет необходимости периодически опрашивать статус доставки сообщения — после изменения статуса REDSMS сам отправит POST-запрос с информацией о сообщении на ваш сервер.\n\nТребования к вашему endpoint:\n— должен быть публично доступен и не требовать аутентификации;\n— принимает POST-запрос в формате application/x-www-form-urlencoded.\n\nПример тестового запроса для отладки обработчика:\ncurl -X POST \"https://your.site/redsms-callback\" -H \"User-Agent: REDSMS API CALLBACK\" -H \"Content-Type: application/x-www-form-urlencoded\" -d \"uuid=0db318ee-c118-11ee-9da1-0342c0a86496&status=delivered&status_time=1706801965\"\n\nТак как запрос идёт без аутентификации, настоятельно рекомендуем ограничить обработку запросов только с IP-адресов REDSMS — актуальный список приведён в документации."
+      }
+    },
+    {
+      "id": 58,
+      "title": "Ограничения HTTP API: сколько сообщений можно создать за один запрос",
+      "category": "http-api-техническая-документация",
+      "status": "ready",
+      "description": "Разработчик спрашивает про лимиты API: сообщений в запросе, подключений в секунду, белый список IP.",
+      "details": {
+        "trigger": "Разработчик спрашивает про лимиты API: сообщений в запросе, подключений в секунду, белый список IP.",
+        "links": [
+          [
+            "Документация: Ограничения HTTP API",
+            "https://docs.redsms.ru/http/limits/"
+          ]
+        ],
+        "response": "Добрый день!\nОсновные ограничения HTTP API REDSMS, единые для всех клиентов:\n— один пользователь может иметь только один API-ключ (у одной компании может быть несколько пользователей);\n— не более 100 подключений в секунду с одного IP-адреса;\n— в одном запросе POST /api/message нельзя создать больше 300 000 сообщений;\n— URL запроса не должен заканчиваться символом «/».\n\nВ разделе «Настройки → HTTP API» можно указать список разрешённых IP-адресов — запросы с других IP получат ответ 401 Unauthorized.\nВ разделе «Настройки → Ограничения» можно включить проверку баланса при создании сообщения: если средств недостаточно, запрос вернёт код 420 (при выключенной опции запрос вернёт 200, но сообщение получит статус no_money и не будет отправлено). Там же задаётся временной интервал, в течение которого сообщения на один номер считаются дубликатами — при превышении лимита запрос получит код 400, а уже созданное сообщение — статус doubled или limit_exceeded."
+      }
+    },
+    {
+      "id": 59,
+      "title": "Отложенная отправка и ограничение срока жизни сообщения через API",
+      "category": "http-api-техническая-документация",
+      "status": "ready",
+      "description": "«Как отправить SMS на конкретное время?» / «Как ограничить время, в течение которого оператор будет пытаться доставить сообщение?»",
+      "details": {
+        "trigger": "«Как отправить SMS на конкретное время?» / «Как ограничить время, в течение которого оператор будет пытаться доставить сообщение?»",
+        "links": [
+          [
+            "Документация: Отправка SMS",
+            "https://docs.redsms.ru/http/send-message-sms/"
+          ]
+        ],
+        "response": "Добрый день!\nДля отложенной отправки укажите в запросе параметр startTime (Unix Timestamp) — сообщение не будет отправлено раньше указанного времени. startTime не может быть позднее, чем 7 календарных дней от текущего момента.\n\nЧтобы ограничить срок жизни сообщения (например, если информация теряет актуальность через пару часов), используйте параметр validity — значение в секундах, от 600 (10 минут) до 86400 (24 часа, значение по умолчанию).\n\nЕсли в поле from указано незарегистрированное имя отправителя, оно будет автоматически заменено на имя по умолчанию из раздела «Настройки»."
+      }
+    },
+    {
+      "id": 60,
+      "title": "Что означают статусы сообщений — created, progress, moderation, delivered и другие",
+      "category": "http-api-техническая-документация",
+      "status": "ready",
+      "description": "Разработчик или клиент просит справочник по статусам объекта сообщения.",
+      "details": {
+        "trigger": "Разработчик или клиент просит справочник по статусам объекта сообщения.",
+        "links": [
+          [
+            "Документация: Отчёты и статусы",
+            "https://docs.redsms.ru/knowledge-base/reports/"
+          ]
+        ],
+        "response": "Добрый день!\nВсе статусы, кроме created, progress и moderation, являются конечными — сообщение с конечным статусом больше не обновляется. Исключение: статус delivered для Viber и VK может позже смениться на read или reply после действия получателя.\n\n«Просрочено» — сообщение не доставлено из-за истечения срока жизни: абонент долго был недоступен, оператор прекратил попытки доставки (по умолчанию 24 часа, можно настроить от 1 минуты).\n«Не доставлено» — возможные причины: телефон абонента заблокирован (нет денег на счёте или отключена услуга приёма SMS), либо ошибка на стороне SIM-карты абонента (переполнена память или сбой).\n\nОбратите внимание: операторы тарифицируют все отправленные сообщения независимо от их итогового статуса — списание происходит по факту отправки, а не по факту доставки."
+      }
+    },
+    {
+      "id": 61,
+      "title": "Как загрузить уникальные промокоды/бонусы для каждого абонента",
+      "category": "базы-контактов-и-переменные",
+      "status": "ready",
+      "description": "«Хотим каждому клиенту отправить свой персональный промокод в SMS»",
+      "details": {
+        "trigger": "«Хотим каждому клиенту отправить свой персональный промокод в SMS»",
+        "response": "Добрый день!\n1. Подготовьте файл с колонками: телефон, промокод, бонусы и т.д.\n2. Загрузите файл в раздел «Базы контактов».\n3. При загрузке укажите тип каждой колонки (например, «Промокод»).\n4. Система присвоит колонке переменную (например, %PROMO_CODE%).\n5. В тексте рассылки используйте эту переменную: «Ваш промокод: %PROMO_CODE%».\nКаждому абоненту в рассылке автоматически подставится его уникальное значение."
+      }
+    },
+    {
+      "id": 62,
+      "title": "Стоп-лист — как исключить номера из всех рассылок навсегда",
+      "category": "базы-контактов-и-переменные",
+      "status": "ready",
+      "description": "«Просим исключить часть номеров из всех будущих рассылок, включая API»",
+      "details": {
+        "trigger": "«Просим исключить часть номеров из всех будущих рассылок, включая API»",
+        "response": "Добрый день!\nВ разделе «Базы контактов → Стоп-лист» добавьте номера, которые больше не должны получать сообщения. Список применяется автоматически — как к рассылкам из личного кабинета, так и к трафику через API. Даже если номер из стоп-листа присутствует в загруженной базе, сообщение ему отправлено не будет."
+      }
+    },
+    {
+      "id": 63,
+      "title": "Как работают переменные в тексте рассылки",
+      "category": "базы-контактов-и-переменные",
+      "status": "ready",
+      "description": "«Хотим персонализировать текст рассылки под каждого получателя»",
+      "details": {
+        "trigger": "«Хотим персонализировать текст рассылки под каждого получателя»",
+        "links": [
+          [
+            "Документация: Работа с переменными",
+            "https://docs.redsms.ru/knowledge-base/dispatches/variable/"
+          ]
+        ],
+        "response": "Добрый день!\nПеременные — это динамические элементы текста, которые позволяют персонализировать сообщение для каждого получателя (имя, промокод, дата рождения и т.д.). Значение переменной берётся из соответствующей колонки загруженной базы контактов и подставляется в текст автоматически при отправке — например, «Здравствуйте, %NAME%!»."
+      }
+    },
+    {
+      "id": 64,
+      "title": "Как создать сервисный/транзакционный шаблон сообщения",
+      "category": "шаблоны-операторов",
+      "status": "ready",
+      "description": "Клиент спрашивает, как зарегистрировать шаблон текста, чтобы получить сниженный (сервисный) тариф.",
+      "details": {
+        "trigger": "Клиент спрашивает, как зарегистрировать шаблон текста, чтобы получить сниженный (сервисный) тариф.",
+        "links": [
+          [
+            "Документация: Шаблоны SMS",
+            "https://docs.redsms.ru/knowledge-base/templates/sms/"
+          ]
+        ],
+        "response": "Добрый день!\nЧтобы создать шаблон:\n1. В боковом меню: «Шаблоны операторов» → «Добавить шаблон» → выберите канал (SMS, Viber, VK).\n2. Укажите имя отправителя, оператора и тип шаблона.\n3. Введите текст сообщения с переменными в нужных местах.\n4. Отправьте шаблон на модерацию.\n\nЕсли текст отправляемого сообщения совпадает с зарегистрированным у оператора шаблоном, оно тарифицируется по сниженной сервисной/транзакционной ставке — она ниже, чем ставка для рекламных сообщений."
+      }
+    },
+    {
+      "id": 65,
+      "title": "Шаблон Viber не проходит модерацию из-за спецсимволов",
+      "category": "шаблоны-операторов",
+      "status": "ready",
+      "description": "«Постоянно отклоняют наш шаблон Viber, в чём может быть проблема?»",
+      "details": {
+        "trigger": "«Постоянно отклоняют наш шаблон Viber, в чём может быть проблема?»",
+        "links": [
+          [
+            "Документация: Шаблоны Viber",
+            "https://docs.redsms.ru/knowledge-base/templates/viber/"
+          ]
+        ],
+        "response": "Добрый день!\nТекст шаблона Viber не должен содержать спецсимволы: ! № # % . , : ; ? \\ / ( ) + - « » _ ' \" ` & ^ [ ] < > | @ $ ~ *\nПереносы строк автоматически заменяются одним пробелом.\nПеред отправкой на регистрацию шаблон можно предварительно проверить: введите текст без переменных и нажмите «Проверить» — это поможет выявить ошибки в переменных ещё до модерации."
+      }
+    },
+    {
+      "id": 66,
+      "title": "Ограничения и сроки регистрации шаблонов VK",
+      "category": "шаблоны-операторов",
+      "status": "ready",
+      "description": "«Сколько по времени регистрируется шаблон VK и какие есть ограничения по символам?»",
+      "details": {
+        "trigger": "«Сколько по времени регистрируется шаблон VK и какие есть ограничения по символам?»",
+        "links": [
+          [
+            "Документация: Шаблоны VK",
+            "https://docs.redsms.ru/knowledge-base/templates/vk/"
+          ]
+        ],
+        "response": "Добрый день!\nВ шаблонах VK допускаются только символы A-Za-z0-9 — использовать русские буквы в имени шаблона нельзя. Регистрация шаблона VK занимает до 3 рабочих дней."
+      }
+    },
+    {
+      "id": 67,
+      "title": "Как включить двухфакторную аутентификацию (2FA) через Telegram",
+      "category": "настройки-личного-кабинета",
+      "status": "ready",
+      "description": "«Хотим повысить безопасность входа в личный кабинет»",
+      "details": {
+        "trigger": "«Хотим повысить безопасность входа в личный кабинет»",
+        "links": [
+          [
+            "Документация: Настройки",
+            "https://docs.redsms.ru/knowledge-base/settings/"
+          ]
+        ],
+        "response": "Добрый день!\n2FA — дополнительная защита аккаунта помимо пароля: при входе система дополнительно запросит подтверждение через Телеграм-бот.\n\nКак настроить:\n1. Настройки → Аккаунт → раздел «Телеграм» → «Подключить».\n2. Перейдите в Телеграм-бот и следуйте инструкциям для привязки аккаунта.\n3. В разделе «Телеграм» активируйте переключатель «Использовать для авторизации».\n\nПосле этого при каждом входе в личный кабинет будет запрашиваться подтверждение в Телеграм-боте."
+      }
+    },
+    {
+      "id": 68,
+      "title": "Настройка уведомлений о балансе",
+      "category": "настройки-личного-кабинета",
+      "status": "ready",
+      "description": "«Хотим получать уведомления о пополнении баланса и о том, что средства заканчиваются»",
+      "details": {
+        "trigger": "«Хотим получать уведомления о пополнении баланса и о том, что средства заканчиваются»",
+        "response": "Добрый день!\nВ разделе «Настройки → Уведомления» доступны, среди прочего:\n— «Пополнение баланса» — уведомление приходит, когда выставленный счёт оплачен и средства зачислены;\n— «Малое количество средств на балансе» — можно задать минимальную сумму, при достижении которой придёт оповещение о необходимости пополнить баланс.\nТам же можно включить автоматическое выставление счёта при низком балансе."
+      }
+    }
+  ],
+  "exportedAt": "2026-08-31T20:13:21.460Z"
+};
+
+// Объект выше используется только как запасной вариант на самый первый запуск
+// (если сервер вообще недоступен и в браузере ещё нет локальной копии).
+// Основным хранилищем данных теперь является сервер (SQLite),
+// см. server.js / API_URL ниже.
+
+const API_URL = '/api/kb';           // относительный путь — работает, если index.html отдаётся тем же сервером
+const API_KEY = 'redsms';            // должен совпадать со значением API_KEY на сервере
+let serverAvailable = true;          // текущее состояние связи с сервером
+
+let filteredData = [];
+let currentCategory = "all";
+
+const cardsContainer = document.getElementById('cards-container');
+const searchInput = document.getElementById('search');
+const categoriesList = document.getElementById('categories-list');
+
+function renderCategories() {
+  categoriesList.innerHTML = kbData.categories.map(cat => `
+    <li>
+      <button class="category-btn ${cat.id === 'all' ? 'active' : ''}" data-category="${cat.id}">
+        ${cat.icon} ${cat.label}
+      </button>
+    </li>
+  `).join('');
+  
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.category;
+      filterCards();
+    });
+  });
+}
+
+function renderCards() {
+  if (filteredData.length === 0) {
+    cardsContainer.innerHTML = '<div class="no-results"><p>Ничего не найдено 😔</p><p>Попробуйте другой поисковый запрос</p></div>';
+    return;
+  }
+
+  cardsContainer.innerHTML = filteredData.map(item => {
+    const categoryData = kbData.categories.find(c => c.id === item.category);
+    const categoryIcon = categoryData ? categoryData.icon : '';
+    
+    return `
+      <div class="card" onclick="openModal(${item.id})">
+        <div class="card-icon">${categoryIcon}</div>
+        <h3>${item.title}</h3>
+        <p>${item.description}</p>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterCards() {
+  filteredData = kbData.data.filter(item => {
+    const matchCategory = currentCategory === 'all' || item.category === currentCategory;
+    const matchSearch = item.title.toLowerCase().includes(searchInput.value.toLowerCase()) ||
+                       item.description.toLowerCase().includes(searchInput.value.toLowerCase());
+    return matchCategory && matchSearch;
+  });
+  renderCards();
+}
+
+function openModal(id) {
+  const item = kbData.data.find(d => d.id === id);
+  const categoryData = kbData.categories.find(c => c.id === item.category);
+  const categoryIcon = categoryData ? categoryData.icon : '';
+  const modalBody = document.getElementById('modal-body');
+  
+  let content = `
+    <div>
+      <div class="status-badge ${item.status}">${item.status === 'ready' ? 'Готово' : item.status === 'draft' ? 'Черновик' : 'Внутреннее'}</div>
+      <h2>${categoryIcon} ${item.title}</h2>
+      <div style="margin-top: 1rem; margin-bottom: 1rem;">
+        <div>
+          <button class="status-btn ${item.status === 'ready' ? 'active' : ''}" data-status="ready" onclick="changeStatus(${item.id}, 'ready')">✅ Готово</button>
+          <button class="status-btn ${item.status === 'draft' ? 'active' : ''}" data-status="draft" onclick="changeStatus(${item.id}, 'draft')">📝 Черновик</button>
+          <button class="status-btn ${item.status === 'internal' ? 'active' : ''}" data-status="internal" onclick="changeStatus(${item.id}, 'internal')">🔒 Внутреннее</button>
+        </div>
+        <button style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteCard(${item.id})">🗑️ Удалить</button>
+      </div>
+    </div>
+  `;
+  
+  for (const [key, value] of Object.entries(item.details)) {
+    if (key === 'response') {
+      const responseId = 'response-' + item.id;
+      content += `<div class="modal-section"><div class="response-wrapper"><div class="response-box" id="${responseId}">${value.replace(/\n/g, '<br>')}</div><button class="copy-btn" onclick="copyToClipboard('${responseId}', this)">📋 Копировать</button></div></div>`;
+    } else if (key === 'action' || key === 'actions') {
+      content += `<div class="modal-section"><h3>Что делать:</h3><p>${value}</p></div>`;
+    } else if (key === 'info') {
+      content += `<div class="modal-section"><h3>Информация:</h3><p>${value}</p></div>`;
+    } else if (key === 'trigger') {
+      content += `<div class="modal-section"><h3>Триггер:</h3><p>${value}</p></div>`;
+    } else if (key === 'links' && Array.isArray(value)) {
+      content += `<div class="modal-section"><h3>Документация:</h3><ul>`;
+      value.forEach(link => {
+        content += `<li><a href="${link[1]}" target="_blank">${link[0]}</a></li>`;
+      });
+      content += `</ul></div>`;
+    } else if (key === 'rates' || key === 'statuses' || key === 'setup' || key === 'security' || key === 'recommendation' || key === 'process' || key === 'topics' || key === 'note') {
+      const headerMap = {
+        'rates': 'Тарифы',
+        'statuses': 'Статусы',
+        'setup': 'Настройка',
+        'security': 'Безопасность',
+        'recommendation': 'Рекомендация',
+        'process': 'Процесс',
+        'topics': 'Касается',
+        'note': 'Важно'
+      };
+      
+      if (key === 'note') {
+        content += `<div class="modal-section"><p><strong>⚠️ ${headerMap[key]}:</strong> ${value}</p></div>`;
+      } else if (key === 'topics') {
+        content += `<div class="modal-section"><p><strong>${headerMap[key]}:</strong> ${value}</p></div>`;
+      } else {
+        content += `<div class="modal-section"><h3>${headerMap[key]}:</h3><p>${value.replace(/\n/g, '<br>')}</p></div>`;
+      }
+    }
+  }
+  
+  modalBody.innerHTML = content;
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function openAddNewForm() {
+  const categorySelect = document.getElementById('new-category');
+  categorySelect.innerHTML = kbData.categories
+    .filter(c => c.id !== 'all')
+    .map(c => `<option value="${c.id}">${c.label}</option>`)
+    .join('');
+  
+  document.getElementById('new-title').value = '';
+  document.getElementById('new-description').value = '';
+  document.getElementById('new-response').value = '';
+  document.getElementById('new-status').value = 'draft';
+  
+  document.getElementById('add-modal').classList.add('active');
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('active');
+}
+
+function showSaveNotification(message, type = 'success') {
+  const notification = document.createElement('div');
+  notification.className = `save-notification ${type !== 'success' ? type : ''}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+async function autoSave() {
+  // Локальный кэш — на случай, если сервер временно недоступен
+  localStorage.setItem('kbData', JSON.stringify(kbData));
+  localStorage.setItem('lastSave', new Date().toISOString());
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify(kbData)
+    });
+
+    if (!res.ok) {
+      throw new Error('HTTP ' + res.status);
+    }
+
+    serverAvailable = true;
+    return true;
+  } catch (error) {
+    console.error('Не удалось сохранить данные на сервере:', error);
+    serverAvailable = false;
+    showSaveNotification('⚠️ Сохранено только локально — сервер недоступен', 'error');
+    return false;
+  }
+}
+
+async function loadFromServer() {
+  try {
+    const res = await fetch(API_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const serverData = await res.json();
+    if (serverData && Array.isArray(serverData.categories) && Array.isArray(serverData.data)) {
+      kbData = serverData;
+      serverAvailable = true;
+      // держим localStorage синхронизированным как офлайн-кэш
+      localStorage.setItem('kbData', JSON.stringify(kbData));
+      localStorage.setItem('lastSave', new Date().toISOString());
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn('Сервер недоступен, использую локальные данные:', error);
+    serverAvailable = false;
+    return false;
+  }
+}
+
+async function syncFromServer() {
+  const ok = await loadFromServer();
+  filterCards();
+  renderCategories();
+  if (ok) {
+    showSaveNotification('✅ Данные обновлены с сервера!');
+  } else {
+    showSaveNotification('⚠️ Не удалось получить данные с сервера', 'error');
+  }
+}
+
+function exportData() {
+  const dataStr = JSON.stringify(kbData, null, 2);
+  const dataBlob = new Blob([dataStr], {type: 'application/json'});
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `kb-export-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showSaveNotification('✅ Данные экспортированы!');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      
+      if (!imported.data || !imported.categories) {
+        showSaveNotification('❌ Неверный формат файла', 'error');
+        return;
+      }
+      
+      if (confirm('Это перезапишет все текущие данные. Вы уверены?')) {
+        kbData = imported;
+        const saved = await autoSave();
+        renderCategories();
+        filterCards();
+        if (saved) {
+          showSaveNotification('✅ Данные импортированы и сохранены на сервере!');
+        }
+      }
+    } catch (error) {
+      showSaveNotification('❌ Ошибка чтения файла', 'error');
+    }
+  };
+  reader.readAsText(file);
+  
+  // Reset file input
+  event.target.value = '';
+}
+
+async function saveNewCard() {
+  const title = document.getElementById('new-title').value.trim();
+  const description = document.getElementById('new-description').value.trim();
+  const category = document.getElementById('new-category').value;
+  const status = document.getElementById('new-status').value;
+  const response = document.getElementById('new-response').value.trim();
+
+  if (!title || !category) {
+    alert('Заполните названия и выберите категорию');
+    return;
+  }
+
+  const newId = Math.max(...kbData.data.map(d => d.id), 0) + 1;
+  
+  const newCard = {
+    id: newId,
+    title: title,
+    category: category,
+    status: status,
+    description: description,
+    details: {
+      response: response || 'Нет информации'
+    }
+  };
+
+  kbData.data.push(newCard);
+  const saved = await autoSave();
+
+  closeAddModal();
+  filterCards();
+  if (saved) {
+    showSaveNotification('✅ Карточка добавлена и сохранена на сервере!');
+  }
+}
+
+async function changeStatus(id, newStatus) {
+  const item = kbData.data.find(d => d.id === id);
+  if (item) {
+    item.status = newStatus;
+    const saved = await autoSave();
+    const statusBtn = document.querySelector(`.status-btn[data-status="${newStatus}"]`);
+    document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+    if (statusBtn) statusBtn.classList.add('active');
+    if (saved) {
+      showSaveNotification('✅ Статус сохранён на сервере!');
+    }
+  }
+}
+
+async function deleteCard(id) {
+  if (confirm('Вы уверены? Это действие необратимо.')) {
+    kbData.data = kbData.data.filter(d => d.id !== id);
+    const saved = await autoSave();
+    closeModal();
+    filterCards();
+    if (saved) {
+      showSaveNotification('✅ Карточка удалена и сохранена на сервере!');
+    }
+  }
+}
+
+// Используется только как резерв, если сервер вообще недоступен
+// при первой загрузке страницы.
+function loadFromStorage() {
+  const saved = localStorage.getItem('kbData');
+  if (saved) {
+    try {
+      const loadedData = JSON.parse(saved);
+      kbData.data = loadedData.data || kbData.data;
+      kbData.categories = loadedData.categories || kbData.categories;
+    } catch (e) {
+      console.log('Не удалось загрузить из localStorage');
+    }
+  }
+}
+
+function resetToDefault() {
+  if (confirm('Это очистит локальный кэш браузера и перезагрузит данные с сервера. Вы уверены?')) {
+    localStorage.removeItem('kbData');
+    showSaveNotification('✅ Локальный кэш очищен, обновляю данные с сервера...');
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+  }
+}
+
+
+searchInput.addEventListener('input', filterCards);
+
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target.id === 'modal') closeModal();
+});
+
+// Загружаем данные: сначала пытаемся получить их с сервера (это основной
+// источник истины), и только если сервер недоступен — используем то, что
+// уже сохранено локально в браузере (офлайн-резерв).
+(async function initData() {
+  const gotFromServer = await loadFromServer();
+  if (!gotFromServer) {
+    loadFromStorage();
+  }
+
+  filteredData = [...kbData.data];
+  renderCategories();
+  renderCards();
+})();
+
+function copyToClipboard(elementId, button) {
+  const element = document.getElementById(elementId);
+  const text = element.innerText;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    const originalText = button.textContent;
+    button.textContent = '✓ Скопировано!';
+    button.classList.add('copied');
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    alert('Ошибка копирования');
+  });
+}
+
+function checkPassword() {
+  const password = document.getElementById('password-input').value;
+  const errorDiv = document.getElementById('login-error');
+  
+  if (password === 'redsms') {
+    localStorage.setItem('redsms_authenticated', 'true');
+    showMainContent();
+    errorDiv.style.display = 'none';
+  } else {
+    errorDiv.style.display = 'block';
+    document.getElementById('password-input').value = '';
+  }
+}
+
+function handleKeyPress(event) {
+  if (event.key === 'Enter') {
+    checkPassword();
+  }
+}
+
+function showMainContent() {
+  document.getElementById('login-container').classList.add('hidden');
+  document.getElementById('logout-btn').style.display = 'block';
+  
+  // Показывать кнопку меню только на мобильных/планшетах
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar-toggle').style.display = 'inline-block';
+  } else {
+    document.getElementById('sidebar-toggle').style.display = 'none';
+  }
+  
+  document.body.style.overflow = 'auto';
+}
+
+function logout() {
+  localStorage.removeItem('redsms_authenticated');
+  document.getElementById('login-container').classList.remove('hidden');
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('sidebar-toggle').style.display = 'none';
+  document.getElementById('password-input').value = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function checkAuthentication() {
+  const isAuthenticated = localStorage.getItem('redsms_authenticated') === 'true';
+  
+  if (isAuthenticated) {
+    showMainContent();
+  } else {
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// Check authentication on page load
+checkAuthentication();
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.classList.toggle('open');
+}
+
+// Close sidebar when clicking outside or selecting category
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelector('.sidebar').classList.remove('open');
+    });
+  });
+  
+  document.addEventListener('click', function(event) {
+    const sidebar = document.querySelector('.sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+    if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+      sidebar.classList.remove('open');
+    }
+  });
+});
+
+// Handle window resize to show/hide menu button
+window.addEventListener('resize', function() {
+  const isAuthenticated = localStorage.getItem('redsms_authenticated') === 'true';
+  if (isAuthenticated) {
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    if (window.innerWidth <= 768) {
+      toggleBtn.style.display = 'inline-block';
+    } else {
+      toggleBtn.style.display = 'none';
+    }
+  }
+});
+</script>
+</body>
+</html>

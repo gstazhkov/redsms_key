@@ -1,0 +1,15 @@
+{
+  "name": "redsms-kb-server",
+  "version": "1.0.0",
+  "description": "Сервер базы знаний RedSMS с сохранением в SQLite (встроенный node:sqlite, без нативных зависимостей)",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
