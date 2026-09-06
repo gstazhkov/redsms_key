@@ -3337,22 +3337,44 @@ async function initData() {
   renderWikiTree();
 }
 
-function copyToClipboard(elementId, button) {
+async function copyToClipboard(elementId, button) {
   const element = document.getElementById(elementId);
+  if (!element) return;
   const text = element.innerText;
-  
-  navigator.clipboard.writeText(text).then(() => {
+
+  const markCopied = () => {
     const originalText = button.textContent;
     button.textContent = '✓ Скопировано!';
     button.classList.add('copied');
-    
+
     setTimeout(() => {
       button.textContent = originalText;
       button.classList.remove('copied');
     }, 2000);
-  }).catch(() => {
-    alert('Ошибка копирования');
-  });
+  };
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      markCopied();
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+
+    if (!copied) throw new Error('Копирование отклонено браузером');
+    markCopied();
+  } catch (error) {
+    alert('Не удалось скопировать текст. Проверьте разрешение браузера на буфер обмена.');
+  }
 }
 
 async function checkPassword() {
