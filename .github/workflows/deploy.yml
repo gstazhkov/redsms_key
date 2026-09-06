@@ -11,21 +11,23 @@ jobs:
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          REDSMS_PASSWORD: ${{ secrets.REDSMS_PASSWORD }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          NODE_ENV: production
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           envs: REDSMS_PASSWORD,SESSION_SECRET,NODE_ENV
-          env:
-            REDSMS_PASSWORD: ${{ secrets.REDSMS_PASSWORD }}
-            SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-            NODE_ENV: production
           script_stop: true
           script: |
             set -eu
             cd /root/redsms_key
             git fetch origin main
             git archive origin/main | tar --exclude='data' -x
+            test -f public/login.html
+            grep -q "/api/auth/login" public/index.html
             npm install --omit=dev
             pm2 restart redsms_key --update-env
             echo "Deployed commit: $(git rev-parse --short origin/main)"
