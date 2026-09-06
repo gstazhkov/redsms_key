@@ -1006,10 +1006,49 @@
     .ai-settings-grid textarea { min-height: 7rem; resize: vertical; }
     .ai-hint { color: #7F8C8D; font-size: 0.82rem; margin-top: 0.3rem; }
 
+    .ai-launcher {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 90;
+      min-height: 3rem;
+      padding: 0.75rem 1rem;
+      border: 0;
+      border-radius: 999px;
+      background: #E74C3C;
+      color: white;
+      box-shadow: 0 6px 18px rgba(192,57,43,0.35);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .ai-launcher:hover { background: #C0392B; }
+
+    .ai-widget {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 5.5rem;
+      z-index: 90;
+      display: none;
+      width: min(390px, calc(100vw - 2rem));
+      padding: 0.8rem;
+      background: white;
+      border: 1px solid #E1E6E9;
+      border-radius: 10px;
+      box-shadow: 0 12px 36px rgba(44,62,80,0.22);
+    }
+
+    .ai-widget.open { display: block; }
+    .ai-widget-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; color: #2C3E50; font-weight: 700; }
+    .ai-widget-close { border: 0; background: none; color: #7F8C8D; cursor: pointer; font-size: 1.2rem; }
+
     @media (max-width: 600px) {
       .ai-form { flex-direction: column; }
       .ai-form button { min-height: 2.7rem; }
       .ai-message { max-width: 94%; }
+      .ai-launcher { right: 1rem; bottom: 1rem; }
+      .ai-widget { right: 1rem; bottom: 5rem; }
     }
 
     .docs-main {
@@ -1376,7 +1415,6 @@
       <button class="tab-btn active" id="tab-btn-kb" onclick="switchTab('kb')">📚 База шаблонов</button>
       <button class="tab-btn" id="tab-btn-wiki" onclick="switchTab('wiki')">📝 Wiki</button>
       <button class="tab-btn" id="tab-btn-docs" onclick="switchTab('docs')">📄 Docs</button>
-      <button class="tab-btn" id="tab-btn-ai" onclick="switchTab('ai')">✨ AI</button>
     </div>
   </div>
 
@@ -1462,15 +1500,18 @@
     </div>
   </div>
 
-  <div class="content view-hidden" id="ai-view">
-    <div class="ai-main">
-      <div class="ai-chat" id="ai-chat"><div class="ai-empty">Задайте вопрос AI-ассистенту</div></div>
-      <form class="ai-form" id="ai-form">
-        <textarea id="ai-input" placeholder="Например: как ответить клиенту по этому регламенту?" rows="2"></textarea>
-        <button type="submit" id="ai-send-btn">Отправить</button>
-      </form>
+  <button class="ai-launcher" id="ai-launcher" onclick="toggleAiWidget()">✨ Спросить AI</button>
+  <aside class="ai-widget" id="ai-widget" aria-label="AI-ассистент">
+    <div class="ai-widget-header">
+      <span>✨ AI-ассистент</span>
+      <button class="ai-widget-close" onclick="toggleAiWidget()" aria-label="Закрыть">✕</button>
     </div>
-  </div>
+    <div class="ai-chat" id="ai-chat"><div class="ai-empty">Задайте вопрос AI-ассистенту</div></div>
+    <form class="ai-form" id="ai-form">
+      <textarea id="ai-input" placeholder="Например: как ответить клиенту по этому регламенту?" rows="2"></textarea>
+      <button type="submit" id="ai-send-btn">Отправить</button>
+    </form>
+  </aside>
 
   <div id="users-modal" class="modal">
     <div class="modal-content">
@@ -3183,11 +3224,9 @@ function switchTab(tab) {
   document.getElementById('kb-view').classList.toggle('view-hidden', tab !== 'kb');
   document.getElementById('wiki-view').classList.toggle('view-hidden', tab !== 'wiki');
   document.getElementById('docs-view').classList.toggle('view-hidden', tab !== 'docs');
-  document.getElementById('ai-view').classList.toggle('view-hidden', tab !== 'ai');
   document.getElementById('tab-btn-kb').classList.toggle('active', tab === 'kb');
   document.getElementById('tab-btn-wiki').classList.toggle('active', tab === 'wiki');
   document.getElementById('tab-btn-docs').classList.toggle('active', tab === 'docs');
-  document.getElementById('tab-btn-ai').classList.toggle('active', tab === 'ai');
   document.querySelectorAll('.sidebar.open').forEach(s => s.classList.remove('open'));
 
   if (tab === 'wiki') {
@@ -3201,6 +3240,12 @@ function switchTab(tab) {
   }
 
   if (tab === 'docs') loadDocuments();
+}
+
+function toggleAiWidget() {
+  const widget = document.getElementById('ai-widget');
+  widget.classList.toggle('open');
+  if (widget.classList.contains('open')) document.getElementById('ai-input').focus();
 }
 
 function renderAiMessages() {
