@@ -601,6 +601,28 @@
       background: #229954;
     }
 
+    .settings-btn {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.7rem 0.75rem;
+      border: 1px solid #D7DEE2;
+      border-radius: 5px;
+      background: white;
+      color: #56636A;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .settings-btn:hover {
+      border-color: #E74C3C;
+      color: #C0392B;
+      background: #FDEDEC;
+    }
+
     .status-btn {
       padding: 0.5rem 1rem;
       margin-right: 0.5rem;
@@ -1288,7 +1310,6 @@
       <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
       <h1>📚 RedSMS KW</h1>
       <span class="user-badge" id="user-badge"></span>
-      <button class="logout-btn admin-only" id="users-btn" onclick="openUsersModal()">👥 Пользователи</button>
       <button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выход</button>
     </div>
     <p>Найдите ответ за секунды</p>
@@ -1313,6 +1334,7 @@
         <button class="import-btn editor-only" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
         <input type="file" id="import-input" accept=".json" onchange="importData(event)">
       </div>
+      <button class="settings-btn admin-only" onclick="openUsersModal()">⚙️ Настройки</button>
     </div>
 
     <div id="cards-container" class="cards-grid"></div>
@@ -1329,6 +1351,7 @@
         <button class="import-btn editor-only" onclick="document.getElementById('wiki-import-input').click()">📤 Импорт</button>
         <input type="file" id="wiki-import-input" accept=".json" onchange="importWikiData(event)">
       </div>
+      <button class="settings-btn admin-only" onclick="openUsersModal()">⚙️ Настройки</button>
     </div>
 
     <div class="wiki-main" id="wiki-main">
