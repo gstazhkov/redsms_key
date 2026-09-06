@@ -436,6 +436,9 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
   if (!messages.length) return res.status(400).json({ error: 'Введите сообщение' });
 
   const secret = decryptSecret(settings.encrypted_secret);
+  if (settings.provider === 'gemini' && !secret) {
+    return res.status(503).json({ error: 'Для Gemini не задан API-ключ' });
+  }
 
   try {
     let endpoint;
@@ -443,7 +446,10 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
     let body;
 
     if (settings.provider === 'gemini') {
-      endpoint = `${settings.base_url.replace(/\/$/, '')}/v1beta/models/${encodeURIComponent(settings.model)}:generateContent?key=${encodeURIComponent(secret)}`;
+      const baseUrl = settings.base_url.replace(/\/$/, '');
+      const model = settings.model.replace(/^models\//, '');
+      endpoint = `${baseUrl.endsWith('/v1beta') ? baseUrl : `${baseUrl}/v1beta`}/models/${encodeURIComponent(model)}:generateContent`;
+      headers['x-goog-api-key'] = secret;
       body = JSON.stringify({
         systemInstruction: { parts: [{ text: settings.system_prompt }] },
         contents: messages.map(message => ({
@@ -474,7 +480,8 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error('AI-сервер вернул ошибку:', response.status, result);
-      return res.status(502).json({ error: 'AI-сервер вернул ошибку' });
+      const providerMessage = result.error?.message;
+      return res.status(502).json({ error: providerMessage ? `AI-сервер: ${providerMessage}` : 'AI-сервер вернул ошибку' });
     }
     const content = settings.provider === 'gemini'
       ? result.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('')

@@ -3594,6 +3594,12 @@ searchClear.addEventListener('click', () => {
   filterCards();
 });
 document.getElementById('ai-form').addEventListener('submit', sendAiMessage);
+document.getElementById('ai-input').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    document.getElementById('ai-form').requestSubmit();
+  }
+});
 
 document.getElementById('modal').addEventListener('click', (e) => {
   if (e.target.id === 'modal') closeModal();
