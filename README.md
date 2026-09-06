@@ -34,6 +34,10 @@ URL: http://127.0.0.1:11434
 Модель: llama3.1:8b
 ```
 
+Для Google Gemini выберите провайдера `Google Gemini API`, укажите API-ключ
+из Google AI Studio и модель, например `gemini-2.0-flash`. URL можно оставить
+пустым: сервер использует `https://generativelanguage.googleapis.com`.
+
 ## Что внутри
 
 ```

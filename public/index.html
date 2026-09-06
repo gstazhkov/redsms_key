@@ -1563,9 +1563,14 @@
       <div id="users-list" style="margin-top:1.5rem;"></div>
       <h3 style="margin-top:2rem;">AI-ассистент</h3>
       <div class="ai-settings-grid">
+        <label>Провайдер</label>
+        <select id="ai-provider">
+          <option value="openai">OpenAI-compatible / Ollama / LM Studio</option>
+          <option value="gemini">Google Gemini API</option>
+        </select>
         <label>URL OpenAI-compatible API</label>
-        <input id="ai-base-url" placeholder="http://127.0.0.1:11434">
-        <div class="ai-hint">Для Ollama обычно используется адрес сервера Ollama, например http://127.0.0.1:11434.</div>
+        <input id="ai-base-url" placeholder="https://generativelanguage.googleapis.com">
+        <div class="ai-hint" id="ai-url-hint">Для Ollama: http://127.0.0.1:11434. Для Gemini оставьте URL по умолчанию.</div>
         <label>Модель</label>
         <input id="ai-model" placeholder="llama3.1:8b">
         <label>Логин провайдера, необязательно</label>
@@ -3741,6 +3746,19 @@ async function checkAuthentication() {
 checkAuthentication();
 
 async function openSettingsModal() {
+
+  function updateAiProviderHint() {
+    const provider = document.getElementById('ai-provider').value;
+    const urlInput = document.getElementById('ai-base-url');
+    const hint = document.getElementById('ai-url-hint');
+    if (provider === 'gemini') {
+      urlInput.placeholder = 'https://generativelanguage.googleapis.com';
+      hint.textContent = 'Оставьте URL по умолчанию или укажите совместимый Gemini endpoint.';
+    } else {
+      urlInput.placeholder = 'http://127.0.0.1:11434';
+      hint.textContent = 'Для Ollama обычно используется адрес сервера Ollama, например http://127.0.0.1:11434.';
+    }
+  }
   document.getElementById('users-modal').classList.add('active');
   if (currentUser?.role === 'admin') {
     await loadUsers();
@@ -3761,6 +3779,7 @@ async function loadAiSettings() {
   if (!response.ok) return;
   const settings = await response.json();
   if (!settings.configured) return;
+  document.getElementById('ai-provider').value = settings.provider || 'openai';
   document.getElementById('ai-base-url').value = settings.baseUrl || '';
   document.getElementById('ai-model').value = settings.model || '';
   document.getElementById('ai-username').value = settings.username || '';
@@ -3772,6 +3791,7 @@ async function saveAiSettings() {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      provider: document.getElementById('ai-provider').value,
       baseUrl: document.getElementById('ai-base-url').value,
       model: document.getElementById('ai-model').value,
       username: document.getElementById('ai-username').value,

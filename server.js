@@ -85,6 +85,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS ai_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
+    provider TEXT NOT NULL DEFAULT 'openai',
     base_url TEXT NOT NULL,
     model TEXT NOT NULL,
     username TEXT NOT NULL,
@@ -93,6 +94,12 @@ db.exec(`
     updated_at TEXT NOT NULL
   );
 `);
+
+try {
+  db.exec("ALTER TABLE ai_settings ADD COLUMN provider TEXT NOT NULL DEFAULT 'openai'");
+} catch (error) {
+  if (!String(error.message).includes('duplicate column name')) throw error;
+}
 
 function encryptSecret(value) {
   const iv = crypto.randomBytes(12);
@@ -381,13 +388,14 @@ app.delete('/api/users/:id', ...requireAdmin, (req, res) => {
 
 app.get('/api/ai/settings', ...requireAdmin, (req, res) => {
   const settings = db.prepare(
-    'SELECT base_url AS baseUrl, model, username, system_prompt AS systemPrompt, updated_at AS updatedAt FROM ai_settings WHERE id = 1'
+    'SELECT provider, base_url AS baseUrl, model, username, system_prompt AS systemPrompt, updated_at AS updatedAt FROM ai_settings WHERE id = 1'
   ).get();
   res.json(settings ? { ...settings, configured: true } : { configured: false });
 });
 
 app.put('/api/ai/settings', ...requireAdmin, (req, res) => {
   const baseUrl = typeof req.body?.baseUrl === 'string' ? req.body.baseUrl.trim() : '';
+  const provider = req.body?.provider === 'gemini' ? 'gemini' : 'openai';
   const model = typeof req.body?.model === 'string' ? req.body.model.trim() : '';
   const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
   const secret = typeof req.body?.secret === 'string' ? req.body.secret : '';
@@ -395,7 +403,7 @@ app.put('/api/ai/settings', ...requireAdmin, (req, res) => {
 
   let parsedUrl;
   try {
-    parsedUrl = new URL(baseUrl);
+    parsedUrl = new URL(baseUrl || 'https://generativelanguage.googleapis.com');
   } catch {
     return res.status(400).json({ error: 'Укажите корректный URL AI-сервера' });
   }
@@ -407,12 +415,12 @@ app.put('/api/ai/settings', ...requireAdmin, (req, res) => {
   const encryptedSecret = secret ? encryptSecret(secret) : existing?.encrypted_secret || '';
   const now = new Date().toISOString();
   db.prepare(
-    `INSERT INTO ai_settings (id, base_url, model, username, encrypted_secret, system_prompt, updated_at)
-     VALUES (1, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET base_url = excluded.base_url, model = excluded.model,
+    `INSERT INTO ai_settings (id, provider, base_url, model, username, encrypted_secret, system_prompt, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET provider = excluded.provider, base_url = excluded.base_url, model = excluded.model,
        username = excluded.username, encrypted_secret = excluded.encrypted_secret,
        system_prompt = excluded.system_prompt, updated_at = excluded.updated_at`
-  ).run(baseUrl, model, username, encryptedSecret, systemPrompt, now);
+  ).run(provider, baseUrl || 'https://generativelanguage.googleapis.com', model, username, encryptedSecret, systemPrompt, now);
   res.json({ ok: true, updatedAt: now });
 });
 
@@ -427,31 +435,50 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
     .map(message => ({ role: message.role, content: message.content.slice(0, 12000) }));
   if (!messages.length) return res.status(400).json({ error: 'Введите сообщение' });
 
-  const endpoint = settings.base_url.replace(/\/$/, '').endsWith('/chat/completions')
-    ? settings.base_url
-    : `${settings.base_url.replace(/\/$/, '')}/v1/chat/completions`;
-  const headers = { 'Content-Type': 'application/json' };
   const secret = decryptSecret(settings.encrypted_secret);
-  if (secret) headers.Authorization = `Bearer ${secret}`;
-  if (settings.username) headers['X-API-Username'] = settings.username;
 
   try {
+    let endpoint;
+    let headers = { 'Content-Type': 'application/json' };
+    let body;
+
+    if (settings.provider === 'gemini') {
+      endpoint = `${settings.base_url.replace(/\/$/, '')}/v1beta/models/${encodeURIComponent(settings.model)}:generateContent?key=${encodeURIComponent(secret)}`;
+      body = JSON.stringify({
+        systemInstruction: { parts: [{ text: settings.system_prompt }] },
+        contents: messages.map(message => ({
+          role: message.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: message.content }]
+        })),
+        generationConfig: { temperature: 0.2 }
+      });
+    } else {
+      endpoint = settings.base_url.replace(/\/$/, '').endsWith('/chat/completions')
+        ? settings.base_url
+        : `${settings.base_url.replace(/\/$/, '')}/v1/chat/completions`;
+      if (secret) headers.Authorization = `Bearer ${secret}`;
+      if (settings.username) headers['X-API-Username'] = settings.username;
+      body = JSON.stringify({
+        model: settings.model,
+        messages: [{ role: 'system', content: settings.system_prompt }, ...messages],
+        temperature: 0.2
+      });
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers,
       signal: AbortSignal.timeout(120000),
-      body: JSON.stringify({
-        model: settings.model,
-        messages: [{ role: 'system', content: settings.system_prompt }, ...messages],
-        temperature: 0.2
-      })
+      body
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error('AI-сервер вернул ошибку:', response.status, result);
       return res.status(502).json({ error: 'AI-сервер вернул ошибку' });
     }
-    const content = result.choices?.[0]?.message?.content;
+    const content = settings.provider === 'gemini'
+      ? result.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('')
+      : result.choices?.[0]?.message?.content;
     if (typeof content !== 'string') return res.status(502).json({ error: 'AI-сервер вернул пустой ответ' });
     res.json({ content });
   } catch (error) {
