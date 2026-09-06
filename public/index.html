@@ -334,6 +334,10 @@
         width: 100%;
       }
 
+      .tab-nav {
+        max-width: 100%;
+      }
+
       .content {
         padding: 1rem;
         display: block;
@@ -375,6 +379,14 @@
 
       .card p {
         font-size: 0.8rem;
+      }
+
+      .wiki-main {
+        padding: 1rem;
+      }
+
+      .wiki-title-input {
+        font-size: 1.4rem;
       }
 
       .modal-content {
@@ -846,6 +858,292 @@
       }
     }
 
+    /* ===== Tabs (KB / Wiki) ===== */
+    .tab-nav {
+      display: flex;
+      gap: 0.35rem;
+      max-width: 500px;
+      margin: 1rem auto 0;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0.85;
+      font-family: inherit;
+    }
+
+    .tab-btn:hover {
+      opacity: 1;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: #E74C3C;
+      opacity: 1;
+    }
+
+    .view-hidden {
+      display: none !important;
+    }
+
+    /* ===== Wiki ===== */
+    .wiki-tree {
+      list-style: none;
+      margin-bottom: 0.5rem;
+    }
+
+    .wiki-tree ul {
+      list-style: none;
+      margin-left: 0.85rem;
+      border-left: 1px dashed #E0E4E7;
+      padding-left: 0.6rem;
+    }
+
+    .wiki-tree li {
+      margin-bottom: 0.15rem;
+    }
+
+    .wiki-page-row {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #34495E;
+      font-size: 0.88rem;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .wiki-page-row:hover {
+      background: #E8EAED;
+      border-left-color: #E74C3C;
+    }
+
+    .wiki-page-row.active {
+      background: white;
+      color: #E74C3C;
+      font-weight: 600;
+      border-left-color: #E74C3C;
+    }
+
+    .wiki-page-title-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wiki-page-actions {
+      display: none;
+      gap: 0.15rem;
+      flex-shrink: 0;
+    }
+
+    .wiki-page-row:hover .wiki-page-actions {
+      display: flex;
+    }
+
+    .wiki-page-actions button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: #95A5A6;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      line-height: 1.4;
+    }
+
+    .wiki-page-actions button:hover {
+      background: #DDE3E6;
+      color: #E74C3C;
+    }
+
+    .wiki-main {
+      background: white;
+      border: 1px solid #ECF0F1;
+      border-radius: 8px;
+      padding: 1.5rem 2rem 2rem;
+      min-height: 400px;
+    }
+
+    .wiki-empty {
+      text-align: center;
+      color: #95A5A6;
+      padding: 3rem 1rem;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .wiki-empty p:first-child {
+      font-size: 1.1rem;
+      color: #7F8C8D;
+      margin-bottom: 0.5rem;
+    }
+
+    .wiki-breadcrumb {
+      font-size: 0.8rem;
+      color: #95A5A6;
+      margin-bottom: 0.75rem;
+    }
+
+    .wiki-breadcrumb span {
+      cursor: pointer;
+    }
+
+    .wiki-breadcrumb span:hover {
+      color: #E74C3C;
+      text-decoration: underline;
+    }
+
+    .wiki-title-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2C3E50;
+      margin-bottom: 0.4rem;
+      font-family: inherit;
+    }
+
+    .wiki-title-input::placeholder {
+      color: #D5DBDB;
+    }
+
+    .wiki-meta {
+      display: flex;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #95A5A6;
+      margin-bottom: 1.25rem;
+    }
+
+    .wiki-save-indicator {
+      font-size: 0.75rem;
+      color: #27AE60;
+      margin-left: 0.6rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: 600;
+    }
+
+    .wiki-save-indicator.show {
+      opacity: 1;
+    }
+
+    .wiki-save-indicator.error {
+      color: #E74C3C;
+    }
+
+    .wiki-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid #ECF0F1;
+    }
+
+    .wiki-toolbar button {
+      border: 1px solid #ECF0F1;
+      background: #F8F9FA;
+      color: #34495E;
+      border-radius: 4px;
+      padding: 0.4rem 0.65rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      min-width: 2rem;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .wiki-toolbar button:hover {
+      background: #ECF0F1;
+      border-color: #E74C3C;
+      color: #E74C3C;
+    }
+
+    .wiki-content-editable {
+      min-height: 320px;
+      outline: none;
+      line-height: 1.75;
+      font-size: 1rem;
+      color: #2C3E50;
+    }
+
+    .wiki-content-editable h1 {
+      font-size: 1.6rem;
+      margin: 1rem 0 0.5rem;
+      color: #2C3E50;
+    }
+
+    .wiki-content-editable h2 {
+      font-size: 1.3rem;
+      margin: 1rem 0 0.5rem;
+      color: #2C3E50;
+    }
+
+    .wiki-content-editable p {
+      margin-bottom: 0.75rem;
+    }
+
+    .wiki-content-editable ul, .wiki-content-editable ol {
+      margin-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .wiki-content-editable blockquote {
+      border-left: 3px solid #E74C3C;
+      padding-left: 1rem;
+      color: #7F8C8D;
+      margin: 0.75rem 0;
+    }
+
+    .wiki-content-editable code {
+      background: #F8F9FA;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+
+    .wiki-content-editable pre {
+      background: #2C3E50;
+      color: #ECF0F1;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 0.75rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .wiki-content-editable a {
+      color: #E74C3C;
+    }
+
+    .wiki-content-editable:empty:before {
+      content: attr(data-placeholder);
+      color: #BDC3C7;
+    }
+
   </style>
 </head>
 <body>
@@ -870,10 +1168,14 @@
     <div class="search-box">
       <input type="text" id="search" placeholder="Ищите по ключевому слову...">
     </div>
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tab-btn-kb" onclick="switchTab('kb')">📚 База шаблонов</button>
+      <button class="tab-btn" id="tab-btn-wiki" onclick="switchTab('wiki')">📝 Wiki</button>
+    </div>
   </div>
 
-  <div class="content">
-    <div class="sidebar">
+  <div class="content" id="kb-view">
+    <div class="sidebar" id="kb-sidebar">
       <h3>Категории</h3>
       <ul id="categories-list"></ul>
       <button class="add-new-btn" onclick="openAddNewForm()">➕ Добавить карточку</button>
@@ -886,6 +1188,53 @@
     </div>
 
     <div id="cards-container" class="cards-grid"></div>
+  </div>
+
+  <div class="content view-hidden" id="wiki-view">
+    <div class="sidebar" id="wiki-sidebar">
+      <h3>Страницы</h3>
+      <ul id="wiki-tree" class="wiki-tree"></ul>
+      <button class="add-new-btn" onclick="createWikiPage(null)">➕ Новая страница</button>
+      <div class="save-controls">
+        <button class="export-btn" onclick="syncWikiFromServer()">🔄 Обновить с сервера</button>
+        <button class="export-btn" onclick="exportWikiData()">📥 Экспорт</button>
+        <button class="import-btn" onclick="document.getElementById('wiki-import-input').click()">📤 Импорт</button>
+        <input type="file" id="wiki-import-input" accept=".json" onchange="importWikiData(event)">
+      </div>
+    </div>
+
+    <div class="wiki-main" id="wiki-main">
+      <div class="wiki-empty" id="wiki-empty">
+        <p>📝 У вас пока нет страниц</p>
+        <p>Создайте свою вики — как в Notion: заголовки, списки, цитаты, ссылки и вложенные страницы. Данные хранятся на сервере, как и база знаний.</p>
+        <button class="add-new-btn" style="max-width:280px;margin:1rem auto 0;" onclick="createWikiPage(null)">➕ Создать первую страницу</button>
+      </div>
+
+      <div id="wiki-editor" style="display:none;">
+        <div class="wiki-breadcrumb" id="wiki-breadcrumb"></div>
+        <input type="text" id="wiki-title-input" class="wiki-title-input" placeholder="Без названия" oninput="updateCurrentPageTitle(this.value)">
+        <div class="wiki-meta">
+          <span id="wiki-updated-at"></span>
+          <span class="wiki-save-indicator" id="wiki-save-indicator">✓ Сохранено</span>
+          <button style="margin-left:auto;background:none;border:none;color:#E74C3C;cursor:pointer;font-size:0.75rem;" onclick="deleteWikiPage(currentWikiPageId)">🗑️ Удалить страницу</button>
+        </div>
+        <div class="wiki-toolbar">
+          <button onclick="execWikiCmd('bold')" title="Жирный"><b>B</b></button>
+          <button onclick="execWikiCmd('italic')" title="Курсив"><i>I</i></button>
+          <button onclick="execWikiCmd('underline')" title="Подчёркнутый"><u>U</u></button>
+          <button onclick="wikiFormatBlock('H1')" title="Заголовок 1">H1</button>
+          <button onclick="wikiFormatBlock('H2')" title="Заголовок 2">H2</button>
+          <button onclick="wikiFormatBlock('P')" title="Обычный текст">¶</button>
+          <button onclick="execWikiCmd('insertUnorderedList')" title="Маркированный список">• Список</button>
+          <button onclick="execWikiCmd('insertOrderedList')" title="Нумерованный список">1. Список</button>
+          <button onclick="wikiFormatBlock('BLOCKQUOTE')" title="Цитата">❝ Цитата</button>
+          <button onclick="wikiFormatBlock('PRE')" title="Код">&lt;/&gt; Код</button>
+          <button onclick="insertWikiLink()" title="Ссылка">🔗 Ссылка</button>
+          <button onclick="createWikiPage(currentWikiPageId)" title="Добавить подстраницу">➕ Подстраница</button>
+        </div>
+        <div id="wiki-content" class="wiki-content-editable" contenteditable="true" data-placeholder="Начните писать..." oninput="updateCurrentPageContent()"></div>
+      </div>
+    </div>
   </div>
 
   <div id="add-modal" class="modal">
@@ -2316,6 +2665,364 @@ function resetToDefault() {
 }
 
 
+// ============== WIKI MODULE (синхронизация с сервером, как и kbData) ==============
+const API_WIKI_URL = '/api/wiki'; // отдельный эндпоинт на том же сервере (см. server.js)
+
+let currentTab = 'kb';
+let currentWikiPageId = null;
+let wikiSaveTimeout = null;
+let wikiServerAvailable = true;
+
+// Резервные данные на случай, если сервер и localStorage оба недоступны при самом первом запуске
+let wikiData = {
+  pages: [
+    {
+      id: 'w1',
+      parentId: null,
+      icon: '👋',
+      title: 'Добро пожаловать в Wiki',
+      content: '<h1>Добро пожаловать!</h1><p>Это ваша база знаний в стиле Notion. Здесь можно создавать страницы, вкладывать их друг в друга и оформлять текст.</p><p>Слева — дерево страниц. Наведите курсор на страницу, чтобы увидеть кнопки <b>➕</b> (добавить подстраницу) и <b>🗑️</b> (удалить).</p><ul><li>Заголовки, списки, цитаты и код — через панель инструментов сверху</li><li>Все изменения сохраняются на сервере (как и в базе знаний)</li></ul>',
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'w2',
+      parentId: 'w1',
+      icon: '📄',
+      title: 'Пример подстраницы',
+      content: '<p>Это пример вложенной страницы. Можно создавать сколько угодно уровней вложенности.</p>',
+      updatedAt: new Date().toISOString()
+    }
+  ]
+};
+
+function loadWikiFromStorageCache() {
+  const saved = localStorage.getItem('wikiData');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.pages)) {
+        wikiData = parsed;
+      }
+    } catch (e) {
+      console.log('Не удалось загрузить wiki из localStorage');
+    }
+  }
+}
+
+async function loadWikiFromServer() {
+  try {
+    const res = await fetch(API_WIKI_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const serverData = await res.json();
+    if (serverData && Array.isArray(serverData.pages)) {
+      wikiData = serverData;
+      wikiServerAvailable = true;
+      // держим localStorage синхронизированным как офлайн-кэш
+      localStorage.setItem('wikiData', JSON.stringify(wikiData));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.warn('Сервер Wiki недоступен, использую локальные данные:', error);
+    wikiServerAvailable = false;
+    return false;
+  }
+}
+
+async function autoSaveWiki() {
+  // Локальный кэш — на случай, если сервер временно недоступен
+  localStorage.setItem('wikiData', JSON.stringify(wikiData));
+
+  try {
+    const res = await fetch(API_WIKI_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
+      },
+      body: JSON.stringify(wikiData)
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    wikiServerAvailable = true;
+    return true;
+  } catch (error) {
+    console.error('Не удалось сохранить Wiki на сервере:', error);
+    wikiServerAvailable = false;
+    showSaveNotification('⚠️ Wiki сохранена только локально — сервер недоступен', 'error');
+    return false;
+  }
+}
+
+async function syncWikiFromServer() {
+  const ok = await loadWikiFromServer();
+  renderWikiTree();
+  if (currentWikiPageId && wikiData.pages.find(p => p.id === currentWikiPageId)) {
+    selectWikiPage(currentWikiPageId);
+  } else if (wikiData.pages.length > 0) {
+    selectWikiPage(wikiData.pages[0].id);
+  } else {
+    currentWikiPageId = null;
+    document.getElementById('wiki-editor').style.display = 'none';
+  }
+  if (ok) {
+    showSaveNotification('✅ Wiki обновлена с сервера!');
+  } else {
+    showSaveNotification('⚠️ Не удалось получить Wiki с сервера', 'error');
+  }
+}
+
+function exportWikiData() {
+  const dataStr = JSON.stringify(wikiData, null, 2);
+  const dataBlob = new Blob([dataStr], {type: 'application/json'});
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `wiki-export-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showSaveNotification('✅ Wiki экспортирована!');
+}
+
+function importWikiData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+
+      if (!Array.isArray(imported.pages)) {
+        showSaveNotification('❌ Неверный формат файла Wiki', 'error');
+        return;
+      }
+
+      if (confirm('Это перезапишет все страницы Wiki. Вы уверены?')) {
+        wikiData = imported;
+        currentWikiPageId = null;
+        const saved = await autoSaveWiki();
+        renderWikiTree();
+        document.getElementById('wiki-editor').style.display = 'none';
+        if (wikiData.pages.length > 0) selectWikiPage(wikiData.pages[0].id);
+        if (saved) {
+          showSaveNotification('✅ Wiki импортирована и сохранена на сервере!');
+        }
+      }
+    } catch (error) {
+      showSaveNotification('❌ Ошибка чтения файла', 'error');
+    }
+  };
+  reader.readAsText(file);
+
+  event.target.value = '';
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('kb-view').classList.toggle('view-hidden', tab !== 'kb');
+  document.getElementById('wiki-view').classList.toggle('view-hidden', tab !== 'wiki');
+  document.getElementById('tab-btn-kb').classList.toggle('active', tab === 'kb');
+  document.getElementById('tab-btn-wiki').classList.toggle('active', tab === 'wiki');
+  document.querySelectorAll('.sidebar.open').forEach(s => s.classList.remove('open'));
+
+  if (tab === 'wiki') {
+    if (currentWikiPageId) {
+      selectWikiPage(currentWikiPageId);
+    } else if (wikiData.pages.length > 0) {
+      selectWikiPage(wikiData.pages[0].id);
+    } else {
+      renderWikiTree();
+    }
+  }
+}
+
+function getWikiChildren(parentId) {
+  return wikiData.pages.filter(p => p.parentId === parentId);
+}
+
+function escapeWikiHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderWikiTree() {
+  const treeEl = document.getElementById('wiki-tree');
+  const emptyEl = document.getElementById('wiki-empty');
+  const editorEl = document.getElementById('wiki-editor');
+
+  if (wikiData.pages.length === 0) {
+    treeEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (editorEl) editorEl.style.display = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  function renderLevel(parentId) {
+    const children = getWikiChildren(parentId);
+    if (children.length === 0) return '';
+    return `<ul>${children.map(page => `
+      <li>
+        <div class="wiki-page-row ${page.id === currentWikiPageId ? 'active' : ''}" onclick="selectWikiPage('${page.id}')">
+          <span class="wiki-page-title-text">${page.icon || '📄'} ${escapeWikiHtml(page.title || 'Без названия')}</span>
+          <span class="wiki-page-actions">
+            <button onclick="event.stopPropagation(); createWikiPage('${page.id}')" title="Добавить подстраницу">➕</button>
+            <button onclick="event.stopPropagation(); deleteWikiPage('${page.id}')" title="Удалить">🗑️</button>
+          </span>
+        </div>
+        ${renderLevel(page.id)}
+      </li>
+    `).join('')}</ul>`;
+  }
+
+  treeEl.innerHTML = renderLevel(null);
+}
+
+function renderWikiBreadcrumb(id) {
+  const breadcrumbEl = document.getElementById('wiki-breadcrumb');
+  const chain = [];
+  let page = wikiData.pages.find(p => p.id === id);
+  while (page) {
+    chain.unshift(page);
+    page = wikiData.pages.find(p => p.id === page.parentId);
+  }
+  breadcrumbEl.innerHTML = chain.map(p =>
+    `<span onclick="selectWikiPage('${p.id}')">${p.icon || '📄'} ${escapeWikiHtml(p.title || 'Без названия')}</span>`
+  ).join(' &nbsp;/&nbsp; ');
+}
+
+function selectWikiPage(id) {
+  const page = wikiData.pages.find(p => p.id === id);
+  if (!page) return;
+  currentWikiPageId = id;
+
+  document.getElementById('wiki-empty').style.display = 'none';
+  document.getElementById('wiki-editor').style.display = 'block';
+
+  document.getElementById('wiki-title-input').value = page.title || '';
+  document.getElementById('wiki-content').innerHTML = page.content || '';
+  document.getElementById('wiki-updated-at').textContent = page.updatedAt
+    ? ('Изменено: ' + new Date(page.updatedAt).toLocaleString('ru-RU'))
+    : '';
+
+  renderWikiBreadcrumb(id);
+  renderWikiTree();
+
+  const wikiSidebar = document.getElementById('wiki-sidebar');
+  if (wikiSidebar) wikiSidebar.classList.remove('open');
+}
+
+async function createWikiPage(parentId) {
+  const newId = 'w' + Date.now() + Math.floor(Math.random() * 1000);
+  const newPage = {
+    id: newId,
+    parentId: parentId || null,
+    icon: '📄',
+    title: '',
+    content: '',
+    updatedAt: new Date().toISOString()
+  };
+  wikiData.pages.push(newPage);
+  const saved = await autoSaveWiki();
+  renderWikiTree();
+  selectWikiPage(newId);
+  if (saved) {
+    showSaveNotification('✅ Страница создана и сохранена на сервере!');
+  }
+  setTimeout(() => {
+    const titleInput = document.getElementById('wiki-title-input');
+    if (titleInput) titleInput.focus();
+  }, 50);
+}
+
+async function deleteWikiPage(id) {
+  if (!id) return;
+  if (!confirm('Удалить эту страницу и все вложенные страницы? Это действие необратимо.')) return;
+
+  const idsToDelete = new Set();
+  (function collect(pid) {
+    idsToDelete.add(pid);
+    getWikiChildren(pid).forEach(child => collect(child.id));
+  })(id);
+
+  wikiData.pages = wikiData.pages.filter(p => !idsToDelete.has(p.id));
+  const saved = await autoSaveWiki();
+
+  if (idsToDelete.has(currentWikiPageId)) {
+    currentWikiPageId = null;
+    document.getElementById('wiki-editor').style.display = 'none';
+    if (wikiData.pages.length > 0) {
+      selectWikiPage(wikiData.pages[0].id);
+    } else {
+      renderWikiTree();
+    }
+  } else {
+    renderWikiTree();
+  }
+
+  if (saved) {
+    showSaveNotification('✅ Страница удалена и сохранена на сервере!');
+  }
+}
+
+function updateCurrentPageTitle(value) {
+  const page = wikiData.pages.find(p => p.id === currentWikiPageId);
+  if (!page) return;
+  page.title = value;
+  page.updatedAt = new Date().toISOString();
+  clearTimeout(wikiSaveTimeout);
+  wikiSaveTimeout = setTimeout(async () => {
+    await autoSaveWiki();
+    showWikiSaveIndicator();
+    renderWikiTree();
+    renderWikiBreadcrumb(currentWikiPageId);
+  }, 500);
+}
+
+function updateCurrentPageContent() {
+  const page = wikiData.pages.find(p => p.id === currentWikiPageId);
+  if (!page) return;
+  page.content = document.getElementById('wiki-content').innerHTML;
+  page.updatedAt = new Date().toISOString();
+  clearTimeout(wikiSaveTimeout);
+  wikiSaveTimeout = setTimeout(async () => {
+    await autoSaveWiki();
+    showWikiSaveIndicator();
+  }, 600);
+}
+
+function showWikiSaveIndicator() {
+  const indicator = document.getElementById('wiki-save-indicator');
+  if (!indicator) return;
+  indicator.textContent = wikiServerAvailable ? '✓ Сохранено на сервере' : '⚠️ Сохранено локально';
+  indicator.classList.toggle('error', !wikiServerAvailable);
+  indicator.classList.add('show');
+  setTimeout(() => indicator.classList.remove('show'), 1500);
+}
+
+function execWikiCmd(cmd, value = null) {
+  document.getElementById('wiki-content').focus();
+  document.execCommand(cmd, false, value);
+  updateCurrentPageContent();
+}
+
+function wikiFormatBlock(tag) {
+  document.getElementById('wiki-content').focus();
+  document.execCommand('formatBlock', false, tag);
+  updateCurrentPageContent();
+}
+
+function insertWikiLink() {
+  const url = prompt('Введите ссылку (URL):', 'https://');
+  if (url) {
+    execWikiCmd('createLink', url);
+  }
+}
+
 searchInput.addEventListener('input', filterCards);
 
 document.getElementById('modal').addEventListener('click', (e) => {
@@ -2334,6 +3041,12 @@ document.getElementById('modal').addEventListener('click', (e) => {
   filteredData = [...kbData.data];
   renderCategories();
   renderCards();
+
+  const gotWikiFromServer = await loadWikiFromServer();
+  if (!gotWikiFromServer) {
+    loadWikiFromStorageCache();
+  }
+  renderWikiTree();
 })();
 
 function copyToClipboard(elementId, button) {
@@ -2411,24 +3124,26 @@ function checkAuthentication() {
 checkAuthentication();
 
 function toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  sidebar.classList.toggle('open');
+  const sidebar = document.getElementById(currentTab === 'wiki' ? 'wiki-sidebar' : 'kb-sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
 }
 
 // Close sidebar when clicking outside or selecting category
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      document.querySelector('.sidebar').classList.remove('open');
+      const sidebar = document.getElementById('kb-sidebar');
+      if (sidebar) sidebar.classList.remove('open');
     });
   });
-  
+
   document.addEventListener('click', function(event) {
-    const sidebar = document.querySelector('.sidebar');
     const toggle = document.getElementById('sidebar-toggle');
-    if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
-      sidebar.classList.remove('open');
-    }
+    document.querySelectorAll('.sidebar.open').forEach(sidebar => {
+      if (!sidebar.contains(event.target) && toggle && !toggle.contains(event.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
   });
 });
 

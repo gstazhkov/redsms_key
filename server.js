@@ -23,6 +23,7 @@ const API_KEY = process.env.API_KEY || 'redsms';
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'kb.db');
 const SEED_PATH = path.join(__dirname, 'seed-data.json');
+const WIKI_SEED_PATH = path.join(__dirname, 'wiki-seed-data.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -40,6 +41,18 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS kb_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    json_data TEXT NOT NULL,
+    saved_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS wiki_store (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    json_data TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS wiki_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     json_data TEXT NOT NULL,
     saved_at TEXT NOT NULL
@@ -68,6 +81,44 @@ function seedIfEmpty() {
 }
 
 seedIfEmpty();
+
+function getCurrentWiki() {
+  const row = db.prepare('SELECT json_data, updated_at FROM wiki_store WHERE id = 1').get();
+  return row || null;
+}
+
+function seedWikiIfEmpty() {
+  const existing = getCurrentWiki();
+  if (existing) return;
+
+  let seed = { pages: [] };
+  if (fs.existsSync(WIKI_SEED_PATH)) {
+    seed = JSON.parse(fs.readFileSync(WIKI_SEED_PATH, 'utf8'));
+  } else {
+    // Дефолтная приветственная страница, если отдельного seed-файла нет
+    const now = new Date().toISOString();
+    seed = {
+      pages: [
+        {
+          id: 'w1',
+          parentId: null,
+          icon: '👋',
+          title: 'Добро пожаловать в Wiki',
+          content: '<h1>Добро пожаловать!</h1><p>Это ваша база знаний в стиле Notion. Создавайте страницы, вкладывайте их друг в друга и оформляйте текст через панель инструментов.</p>',
+          updatedAt: now
+        }
+      ]
+    };
+  }
+
+  const now = new Date().toISOString();
+  db.prepare(
+    'INSERT INTO wiki_store (id, json_data, updated_at) VALUES (1, ?, ?)'
+  ).run(JSON.stringify(seed), now);
+  console.log('Wiki инициализирована начальными данными:', seed.pages.length, 'страниц');
+}
+
+seedWikiIfEmpty();
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -143,6 +194,73 @@ app.post('/api/kb/history/:id/restore', checkApiKey, (req, res) => {
 
   const now = new Date().toISOString();
   db.prepare('UPDATE kb_store SET json_data = ?, updated_at = ? WHERE id = 1').run(
+    row.json_data,
+    now
+  );
+  res.json({ ok: true, restoredAt: now });
+});
+
+// ===== Wiki: те же принципы, что и у /api/kb выше =====
+
+// Получить текущие данные Wiki
+app.get('/api/wiki', (req, res) => {
+  const row = getCurrentWiki();
+  if (!row) return res.json({ pages: [] });
+  res.set('Cache-Control', 'no-store');
+  res.json(JSON.parse(row.json_data));
+});
+
+// Сохранить (перезаписать) данные Wiki целиком
+app.put('/api/wiki', checkApiKey, (req, res) => {
+  const body = req.body;
+  if (!body || !Array.isArray(body.pages)) {
+    return res.status(400).json({ error: 'Некорректный формат данных Wiki' });
+  }
+
+  const now = new Date().toISOString();
+  const json = JSON.stringify(body);
+
+  db.exec('BEGIN');
+  try {
+    db.prepare(
+      `INSERT INTO wiki_store (id, json_data, updated_at) VALUES (1, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET json_data = excluded.json_data, updated_at = excluded.updated_at`
+    ).run(json, now);
+
+    db.prepare('INSERT INTO wiki_history (json_data, saved_at) VALUES (?, ?)').run(json, now);
+
+    // Храним не более 50 последних версий
+    db.prepare(
+      `DELETE FROM wiki_history WHERE id NOT IN (
+         SELECT id FROM wiki_history ORDER BY id DESC LIMIT 50
+       )`
+    ).run();
+
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    console.error('Ошибка сохранения Wiki в базу данных:', error);
+    return res.status(500).json({ error: 'Не удалось сохранить данные Wiki' });
+  }
+
+  res.json({ ok: true, updatedAt: now });
+});
+
+// Список последних версий Wiki (на случай отката)
+app.get('/api/wiki/history', checkApiKey, (req, res) => {
+  const rows = db
+    .prepare('SELECT id, saved_at FROM wiki_history ORDER BY id DESC LIMIT 50')
+    .all();
+  res.json(rows);
+});
+
+// Восстановить конкретную версию Wiki из истории
+app.post('/api/wiki/history/:id/restore', checkApiKey, (req, res) => {
+  const row = db.prepare('SELECT json_data FROM wiki_history WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Версия не найдена' });
+
+  const now = new Date().toISOString();
+  db.prepare('UPDATE wiki_store SET json_data = ?, updated_at = ? WHERE id = 1').run(
     row.json_data,
     now
   );
