@@ -15,6 +15,11 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
+          envs: REDSMS_PASSWORD,SESSION_SECRET,NODE_ENV
+          env:
+            REDSMS_PASSWORD: ${{ secrets.REDSMS_PASSWORD }}
+            SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+            NODE_ENV: production
           script_stop: true
           script: |
             set -eu
