@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
+const multer = require('multer');
 const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
@@ -28,8 +29,10 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'kb.db');
 const SEED_PATH = path.join(__dirname, 'seed-data.json');
 const WIKI_SEED_PATH = path.join(__dirname, 'wiki-seed-data.json');
+const DOCS_DIR = path.join(DATA_DIR, 'documents');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
 
 const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL;');
@@ -60,6 +63,15 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     json_data TEXT NOT NULL,
     saved_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    file_name TEXT NOT NULL UNIQUE,
+    uploaded_at TEXT NOT NULL,
+    size INTEGER NOT NULL
   );
 `);
 
@@ -231,6 +243,69 @@ function requireAuth(req, res, next) {
   }
   next();
 }
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: DOCS_DIR,
+    filename: (req, file, callback) => {
+      callback(null, `${crypto.randomUUID()}.pdf`);
+    }
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const isPdf = file.mimetype === 'application/pdf'
+      || path.extname(file.originalname).toLowerCase() === '.pdf';
+    callback(null, isPdf);
+  }
+});
+
+app.get('/api/docs', requireAuth, (req, res) => {
+  const rows = db.prepare(
+    'SELECT id, title, original_name AS originalName, uploaded_at AS uploadedAt, size FROM documents ORDER BY uploaded_at DESC'
+  ).all();
+  res.set('Cache-Control', 'no-store');
+  res.json(rows);
+});
+
+app.post('/api/docs', requireAuth, upload.single('document'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Выберите PDF-файл' });
+  }
+
+  const id = crypto.randomUUID();
+  const title = typeof req.body.title === 'string' && req.body.title.trim()
+    ? req.body.title.trim().slice(0, 200)
+    : path.basename(req.file.originalname, '.pdf');
+  const uploadedAt = new Date().toISOString();
+
+  try {
+    db.prepare(
+      'INSERT INTO documents (id, title, original_name, file_name, uploaded_at, size) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(id, title, req.file.originalname.slice(0, 255), req.file.filename, uploadedAt, req.file.size);
+  } catch (error) {
+    fs.rmSync(req.file.path, { force: true });
+    console.error('Ошибка сохранения документа:', error);
+    return res.status(500).json({ error: 'Не удалось сохранить документ' });
+  }
+
+  res.status(201).json({ id, title, uploadedAt, size: req.file.size });
+});
+
+app.get('/api/docs/:id/download', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Документ не найден' });
+  const filePath = path.join(DOCS_DIR, row.file_name);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Файл документа не найден' });
+  res.download(filePath, row.original_name);
+});
+
+app.delete('/api/docs/:id', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT file_name FROM documents WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Документ не найден' });
+  db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.id);
+  fs.rmSync(path.join(DOCS_DIR, row.file_name), { force: true });
+  res.json({ ok: true });
+});
 
 // Получить текущие данные базы знаний
 app.get('/api/kb', requireAuth, (req, res) => {

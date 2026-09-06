@@ -858,7 +858,7 @@
       }
     }
 
-    /* ===== Tabs (KB / Wiki) ===== */
+    /* ===== Tabs (KB / Wiki / Docs) ===== */
     .tab-nav {
       display: flex;
       gap: 0.35rem;
@@ -899,6 +899,98 @@
 
     .view-hidden {
       display: none !important;
+    }
+
+    .docs-main {
+      width: 100%;
+    }
+
+    .docs-toolbar {
+      display: flex;
+      align-items: end;
+      gap: 0.75rem;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      background: #F8F9FA;
+      border: 1px solid #ECF0F1;
+      border-radius: 8px;
+    }
+
+    .docs-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 1;
+    }
+
+    .docs-field label {
+      color: #56636A;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .docs-field input {
+      min-height: 2.6rem;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #D7DEE2;
+      border-radius: 5px;
+      font: inherit;
+      background: white;
+    }
+
+    .docs-upload-btn {
+      min-height: 2.6rem;
+      padding: 0.6rem 1rem;
+      border: 0;
+      border-radius: 5px;
+      background: #E74C3C;
+      color: white;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .docs-upload-btn:disabled { opacity: 0.6; cursor: wait; }
+
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .doc-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      padding: 1.25rem;
+      background: white;
+      border: 1px solid #ECF0F1;
+      border-radius: 8px;
+    }
+
+    .doc-card-icon { font-size: 2rem; }
+    .doc-card h3 { color: #2C3E50; font-size: 1rem; overflow-wrap: anywhere; }
+    .doc-card-meta { color: #7F8C8D; font-size: 0.8rem; line-height: 1.45; }
+    .doc-card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+    .doc-card-actions a, .doc-card-actions button {
+      flex: 1;
+      padding: 0.55rem 0.65rem;
+      border: 0;
+      border-radius: 4px;
+      text-align: center;
+      text-decoration: none;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .doc-download { background: #EAF2F8; color: #2471A3; }
+    .doc-delete { background: #FDEDEC; color: #C0392B; }
+
+    .docs-empty { padding: 3rem 1rem; color: #7F8C8D; text-align: center; }
+
+    @media (max-width: 600px) {
+      .docs-toolbar { align-items: stretch; flex-direction: column; }
     }
 
     /* ===== Wiki ===== */
@@ -1171,6 +1263,7 @@
     <div class="tab-nav">
       <button class="tab-btn active" id="tab-btn-kb" onclick="switchTab('kb')">📚 База шаблонов</button>
       <button class="tab-btn" id="tab-btn-wiki" onclick="switchTab('wiki')">📝 Wiki</button>
+      <button class="tab-btn" id="tab-btn-docs" onclick="switchTab('docs')">📄 Docs</button>
     </div>
   </div>
 
@@ -1234,6 +1327,23 @@
         </div>
         <div id="wiki-content" class="wiki-content-editable" contenteditable="true" data-placeholder="Начните писать..." oninput="updateCurrentPageContent()"></div>
       </div>
+    </div>
+  </div>
+
+  <div class="content view-hidden" id="docs-view">
+    <div class="docs-main">
+      <div class="docs-toolbar">
+        <div class="docs-field">
+          <label for="doc-title">Название документа</label>
+          <input type="text" id="doc-title" maxlength="200" placeholder="Например: Регламент обработки обращений">
+        </div>
+        <div class="docs-field">
+          <label for="doc-file">PDF-файл, до 25 МБ</label>
+          <input type="file" id="doc-file" accept="application/pdf,.pdf">
+        </div>
+        <button class="docs-upload-btn" id="docs-upload-btn" onclick="uploadDocument()">📤 Загрузить PDF</button>
+      </div>
+      <div id="docs-container" class="docs-grid"></div>
     </div>
   </div>
 
@@ -2894,8 +3004,10 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('kb-view').classList.toggle('view-hidden', tab !== 'kb');
   document.getElementById('wiki-view').classList.toggle('view-hidden', tab !== 'wiki');
+  document.getElementById('docs-view').classList.toggle('view-hidden', tab !== 'docs');
   document.getElementById('tab-btn-kb').classList.toggle('active', tab === 'kb');
   document.getElementById('tab-btn-wiki').classList.toggle('active', tab === 'wiki');
+  document.getElementById('tab-btn-docs').classList.toggle('active', tab === 'docs');
   document.querySelectorAll('.sidebar.open').forEach(s => s.classList.remove('open'));
 
   if (tab === 'wiki') {
@@ -2907,6 +3019,93 @@ function switchTab(tab) {
       renderWikiTree();
     }
   }
+
+  if (tab === 'docs') loadDocuments();
+}
+
+function formatDocumentSize(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function renderDocuments(documents) {
+  const container = document.getElementById('docs-container');
+  if (!documents.length) {
+    container.innerHTML = '<div class="docs-empty">Документов пока нет. Загрузите первый PDF.</div>';
+    return;
+  }
+
+  container.innerHTML = documents.map(document => `
+    <article class="doc-card">
+      <div class="doc-card-icon">📄</div>
+      <h3>${escapeWikiHtml(document.title)}</h3>
+      <div class="doc-card-meta">${escapeWikiHtml(document.originalName)}<br>${formatDocumentSize(document.size)} · ${new Date(document.uploadedAt).toLocaleDateString('ru-RU')}</div>
+      <div class="doc-card-actions">
+        <a class="doc-download" href="/api/docs/${encodeURIComponent(document.id)}/download" target="_blank" rel="noopener">Открыть</a>
+        <button class="doc-delete" onclick="deleteDocument('${encodeURIComponent(document.id)}')">Удалить</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+async function loadDocuments() {
+  const container = document.getElementById('docs-container');
+  container.innerHTML = '<div class="docs-empty">Загрузка документов...</div>';
+  try {
+    const response = await fetch('/api/docs', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    renderDocuments(await response.json());
+  } catch (error) {
+    container.innerHTML = '<div class="docs-empty">Не удалось загрузить документы.</div>';
+  }
+}
+
+async function uploadDocument() {
+  const fileInput = document.getElementById('doc-file');
+  const titleInput = document.getElementById('doc-title');
+  const button = document.getElementById('docs-upload-btn');
+  const file = fileInput.files[0];
+  if (!file) {
+    showSaveNotification('❌ Выберите PDF-файл', 'error');
+    return;
+  }
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    showSaveNotification('❌ Можно загружать только PDF', 'error');
+    return;
+  }
+  if (file.size > 25 * 1024 * 1024) {
+    showSaveNotification('❌ Максимальный размер PDF — 25 МБ', 'error');
+    return;
+  }
+
+  button.disabled = true;
+  const formData = new FormData();
+  formData.append('title', titleInput.value);
+  formData.append('document', file);
+  try {
+    const response = await fetch('/api/docs', { method: 'POST', body: formData });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Ошибка загрузки');
+    titleInput.value = '';
+    fileInput.value = '';
+    await loadDocuments();
+    showSaveNotification('✅ Документ загружен');
+  } catch (error) {
+    showSaveNotification(`❌ ${error.message}`, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function deleteDocument(id) {
+  if (!confirm('Удалить этот документ?')) return;
+  const response = await fetch(`/api/docs/${id}`, { method: 'DELETE' });
+  if (!response.ok) {
+    showSaveNotification('❌ Не удалось удалить документ', 'error');
+    return;
+  }
+  await loadDocuments();
+  showSaveNotification('✅ Документ удалён');
 }
 
 function getWikiChildren(parentId) {
@@ -3212,6 +3411,7 @@ async function checkAuthentication() {
 checkAuthentication();
 
 function toggleSidebar() {
+  if (currentTab === 'docs') return;
   const sidebar = document.getElementById(currentTab === 'wiki' ? 'wiki-sidebar' : 'kb-sidebar');
   if (sidebar) sidebar.classList.toggle('open');
 }
