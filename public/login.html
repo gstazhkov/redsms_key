@@ -23,16 +23,19 @@
 <body>
   <main>
     <h1>RedSMS KB</h1>
-    <p>Введите пароль для доступа</p>
+    <p>Войдите в базу знаний</p>
     <form id="login-form">
+      <label for="login">Логин</label>
+      <input id="login" name="login" type="text" autocomplete="username" required autofocus>
       <label for="password">Пароль</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
       <button type="submit">Войти</button>
       <div id="error" role="alert" aria-live="polite"></div>
     </form>
   </main>
   <script>
     const form = document.getElementById('login-form');
+    const login = document.getElementById('login');
     const password = document.getElementById('password');
     const error = document.getElementById('error');
     const button = form.querySelector('button');
@@ -45,7 +48,7 @@
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: password.value })
+          body: JSON.stringify({ login: login.value, password: password.value })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Не удалось войти');

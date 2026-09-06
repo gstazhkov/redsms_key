@@ -771,6 +771,20 @@
       transition: all 0.2s;
     }
 
+    .user-badge {
+      display: none;
+      padding: 0.45rem 0.7rem;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      color: white;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .admin-only { display: none !important; }
+    body[data-role="admin"] .admin-only { display: inline-block !important; }
+    body[data-role="reader"] .editor-only { display: none !important; }
+
     .logout-btn:hover, .sidebar-toggle:hover {
       background: rgba(255,255,255,0.3);
       border-color: white;
@@ -1260,8 +1274,9 @@
 <div class="login-container" id="login-container">
   <div class="login-box">
     <h1>🔐 RedSMS KB</h1>
-    <p>Введите пароль для доступа</p>
+    <p>Войдите в базу знаний</p>
     <div class="login-error" id="login-error">Неверный пароль</div>
+    <input type="text" id="login-input" class="login-input" placeholder="Логин" autocomplete="username">
     <input type="password" id="password-input" class="login-input" placeholder="Пароль" onkeypress="handleKeyPress(event)">
     <button class="login-btn" onclick="checkPassword()">Войти</button>
   </div>
@@ -1272,6 +1287,8 @@
     <div class="header-top">
       <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
       <h1>📚 RedSMS KW</h1>
+      <span class="user-badge" id="user-badge"></span>
+      <button class="logout-btn admin-only" id="users-btn" onclick="openUsersModal()">👥 Пользователи</button>
       <button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выход</button>
     </div>
     <p>Найдите ответ за секунды</p>
@@ -1289,11 +1306,11 @@
     <div class="sidebar" id="kb-sidebar">
       <h3>Категории</h3>
       <ul id="categories-list"></ul>
-      <button class="add-new-btn" onclick="openAddNewForm()">➕ Добавить карточку</button>
+      <button class="add-new-btn editor-only" onclick="openAddNewForm()">➕ Добавить карточку</button>
       <div class="save-controls">
         <button class="export-btn" onclick="syncFromServer()">🔄 Обновить с сервера</button>
         <button class="export-btn" onclick="exportData()">📥 Экспорт</button>
-        <button class="import-btn" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
+        <button class="import-btn editor-only" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
         <input type="file" id="import-input" accept=".json" onchange="importData(event)">
       </div>
     </div>
@@ -1305,11 +1322,11 @@
     <div class="sidebar" id="wiki-sidebar">
       <h3>Страницы</h3>
       <ul id="wiki-tree" class="wiki-tree"></ul>
-      <button class="add-new-btn" onclick="createWikiPage(null)">➕ Новая страница</button>
+      <button class="add-new-btn editor-only" onclick="createWikiPage(null)">➕ Новая страница</button>
       <div class="save-controls">
         <button class="export-btn" onclick="syncWikiFromServer()">🔄 Обновить с сервера</button>
         <button class="export-btn" onclick="exportWikiData()">📥 Экспорт</button>
-        <button class="import-btn" onclick="document.getElementById('wiki-import-input').click()">📤 Импорт</button>
+        <button class="import-btn editor-only" onclick="document.getElementById('wiki-import-input').click()">📤 Импорт</button>
         <input type="file" id="wiki-import-input" accept=".json" onchange="importWikiData(event)">
       </div>
     </div>
@@ -1327,9 +1344,9 @@
         <div class="wiki-meta">
           <span id="wiki-updated-at"></span>
           <span class="wiki-save-indicator" id="wiki-save-indicator">✓ Сохранено</span>
-          <button style="margin-left:auto;background:none;border:none;color:#E74C3C;cursor:pointer;font-size:0.75rem;" onclick="deleteWikiPage(currentWikiPageId)">🗑️ Удалить страницу</button>
+          <button class="editor-only" style="margin-left:auto;background:none;border:none;color:#E74C3C;cursor:pointer;font-size:0.75rem;" onclick="deleteWikiPage(currentWikiPageId)">🗑️ Удалить страницу</button>
         </div>
-        <div class="wiki-toolbar">
+        <div class="wiki-toolbar editor-only">
           <button onclick="execWikiCmd('bold')" title="Жирный"><b>B</b></button>
           <button onclick="execWikiCmd('italic')" title="Курсив"><i>I</i></button>
           <button onclick="execWikiCmd('underline')" title="Подчёркнутый"><u>U</u></button>
@@ -1341,7 +1358,7 @@
           <button onclick="wikiFormatBlock('BLOCKQUOTE')" title="Цитата">❝ Цитата</button>
           <button onclick="wikiFormatBlock('PRE')" title="Код">&lt;/&gt; Код</button>
           <button onclick="insertWikiLink()" title="Ссылка">🔗 Ссылка</button>
-          <button onclick="createWikiPage(currentWikiPageId)" title="Добавить подстраницу">➕ Подстраница</button>
+          <button class="editor-only" onclick="createWikiPage(currentWikiPageId)" title="Добавить подстраницу">➕ Подстраница</button>
         </div>
         <div id="wiki-content" class="wiki-content-editable" contenteditable="true" data-placeholder="Начните писать..." oninput="updateCurrentPageContent()"></div>
       </div>
@@ -1359,9 +1376,34 @@
           <label for="doc-file">PDF-файл, до 25 МБ</label>
           <input type="file" id="doc-file" accept="application/pdf,.pdf">
         </div>
-        <button class="docs-upload-btn" id="docs-upload-btn" onclick="uploadDocument()">📤 Загрузить PDF</button>
+        <button class="docs-upload-btn editor-only" id="docs-upload-btn" onclick="uploadDocument()">📤 Загрузить PDF</button>
       </div>
       <div id="docs-container" class="docs-grid"></div>
+    </div>
+  </div>
+
+  <div id="users-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeUsersModal()">✕</button>
+      <h2>Пользователи</h2>
+      <div class="form-group">
+        <label>Логин</label>
+        <input type="text" id="user-login" placeholder="Например, operator1">
+      </div>
+      <div class="form-group">
+        <label>Пароль (минимум 8 символов)</label>
+        <input type="password" id="user-password" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select id="user-role">
+          <option value="reader">Только чтение</option>
+          <option value="editor">Редактор</option>
+          <option value="admin">Администратор</option>
+        </select>
+      </div>
+      <button class="btn-save" onclick="createUser()">Добавить пользователя</button>
+      <div id="users-list" style="margin-top:1.5rem;"></div>
     </div>
   </div>
 
@@ -2525,12 +2567,12 @@ function openModal(id) {
       <h2>${categoryIcon} ${item.title}</h2>
       <div style="margin-top: 1rem; margin-bottom: 1rem;">
         <div>
-          <button class="status-btn ${item.status === 'ready' ? 'active' : ''}" data-status="ready" onclick="changeStatus(${item.id}, 'ready')">✅ Готово</button>
-          <button class="status-btn ${item.status === 'draft' ? 'active' : ''}" data-status="draft" onclick="changeStatus(${item.id}, 'draft')">📝 Черновик</button>
-          <button class="status-btn ${item.status === 'internal' ? 'active' : ''}" data-status="internal" onclick="changeStatus(${item.id}, 'internal')">🔒 Внутреннее</button>
+          <button class="status-btn editor-only ${item.status === 'ready' ? 'active' : ''}" data-status="ready" onclick="changeStatus(${item.id}, 'ready')">✅ Готово</button>
+          <button class="status-btn editor-only ${item.status === 'draft' ? 'active' : ''}" data-status="draft" onclick="changeStatus(${item.id}, 'draft')">📝 Черновик</button>
+          <button class="status-btn editor-only ${item.status === 'internal' ? 'active' : ''}" data-status="internal" onclick="changeStatus(${item.id}, 'internal')">🔒 Внутреннее</button>
         </div>
-        <button style="margin-top: 0.75rem; margin-right: 0.5rem; padding: 0.5rem 1rem; background: #3498DB; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="editCard(${item.id})">✏️ Редактировать</button>
-        <button style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteCard(${item.id})">🗑️ Удалить</button>
+        <button class="editor-only" style="margin-top: 0.75rem; margin-right: 0.5rem; padding: 0.5rem 1rem; background: #3498DB; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="editCard(${item.id})">✏️ Редактировать</button>
+        <button class="editor-only" style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteCard(${item.id})">🗑️ Удалить</button>
       </div>
     </div>
   `;
@@ -2871,6 +2913,7 @@ function resetToDefault() {
 const API_WIKI_URL = '/api/wiki'; // отдельный эндпоинт на том же сервере (см. server.js)
 
 let currentTab = 'kb';
+let currentUser = null;
 let currentWikiPageId = null;
 let wikiSaveTimeout = null;
 let wikiServerAvailable = true;
@@ -3063,7 +3106,7 @@ function renderDocuments(documents) {
       <div class="doc-card-meta">${escapeWikiHtml(document.originalName)}<br>${formatDocumentSize(document.size)} · ${new Date(document.uploadedAt).toLocaleDateString('ru-RU')}</div>
       <div class="doc-card-actions">
         <a class="doc-download" href="/api/docs/${encodeURIComponent(document.id)}/download" target="_blank" rel="noopener">Открыть</a>
-        <button class="doc-delete" onclick="deleteDocument('${encodeURIComponent(document.id)}')">Удалить</button>
+        <button class="doc-delete editor-only" onclick="deleteDocument('${encodeURIComponent(document.id)}')">Удалить</button>
       </div>
     </article>
   `).join('');
@@ -3378,6 +3421,7 @@ async function copyToClipboard(elementId, button) {
 }
 
 async function checkPassword() {
+  const login = document.getElementById('login-input').value.trim();
   const password = document.getElementById('password-input').value;
   const errorDiv = document.getElementById('login-error');
 
@@ -3385,10 +3429,12 @@ async function checkPassword() {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
+      body: JSON.stringify({ login, password })
     });
 
+    const result = await response.json().catch(() => ({}));
     if (response.ok) {
+      currentUser = result.user;
       await initData();
       errorDiv.style.display = 'none';
       document.getElementById('password-input').value = '';
@@ -3396,7 +3442,6 @@ async function checkPassword() {
       return;
     }
 
-    const result = await response.json().catch(() => ({}));
     errorDiv.textContent = result.error || 'Не удалось войти';
     errorDiv.style.display = 'block';
     document.getElementById('password-input').value = '';
@@ -3415,6 +3460,13 @@ function handleKeyPress(event) {
 function showMainContent() {
   document.getElementById('login-container').classList.add('hidden');
   document.getElementById('logout-btn').style.display = 'block';
+  const badge = document.getElementById('user-badge');
+  if (currentUser) {
+    const roleNames = { reader: 'чтение', editor: 'редактор', admin: 'администратор' };
+    document.body.dataset.role = currentUser.role;
+    badge.textContent = `${currentUser.login} · ${roleNames[currentUser.role] || currentUser.role}`;
+    badge.style.display = 'inline-block';
+  }
   
   // Показывать кнопку меню только на мобильных/планшетах
   if (window.innerWidth <= 768) {
@@ -3430,6 +3482,10 @@ async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
   document.getElementById('login-container').classList.remove('hidden');
   document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('user-badge').style.display = 'none';
+  document.body.removeAttribute('data-role');
+  currentUser = null;
+  document.getElementById('login-input').value = '';
   document.getElementById('sidebar-toggle').style.display = 'none';
   document.getElementById('password-input').value = '';
   document.body.style.overflow = 'hidden';
@@ -3440,6 +3496,7 @@ async function checkAuthentication() {
     const response = await fetch('/api/auth/session', { cache: 'no-store' });
     const result = await response.json();
     if (response.ok && result.authenticated) {
+      currentUser = result.user;
       showMainContent();
       await initData();
       return;
@@ -3452,6 +3509,69 @@ async function checkAuthentication() {
 }
 
 checkAuthentication();
+
+async function openUsersModal() {
+  document.getElementById('users-modal').classList.add('active');
+  await loadUsers();
+}
+
+function closeUsersModal() {
+  document.getElementById('users-modal').classList.remove('active');
+}
+
+function roleLabel(role) {
+  return { reader: 'Только чтение', editor: 'Редактор', admin: 'Администратор' }[role] || role;
+}
+
+async function loadUsers() {
+  const list = document.getElementById('users-list');
+  list.textContent = 'Загрузка...';
+  const response = await fetch('/api/users', { cache: 'no-store' });
+  if (!response.ok) {
+    list.textContent = 'Не удалось загрузить пользователей';
+    return;
+  }
+  const users = await response.json();
+  list.innerHTML = users.map(user => `
+    <div style="display:flex;align-items:center;gap:.5rem;padding:.65rem 0;border-top:1px solid #ECF0F1;">
+      <span style="flex:1;"><strong>${escapeWikiHtml(user.login)}</strong><br><small>${roleLabel(user.role)}</small></span>
+      ${user.id === currentUser?.id ? '' : `<button class="doc-delete" onclick="deleteUser('${encodeURIComponent(user.id)}')">Удалить</button>`}
+    </div>
+  `).join('');
+}
+
+async function createUser() {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      login: document.getElementById('user-login').value,
+      password: document.getElementById('user-password').value,
+      role: document.getElementById('user-role').value
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    showSaveNotification(`❌ ${result.error || 'Не удалось создать пользователя'}`, 'error');
+    return;
+  }
+  document.getElementById('user-login').value = '';
+  document.getElementById('user-password').value = '';
+  await loadUsers();
+  showSaveNotification('✅ Пользователь создан');
+}
+
+async function deleteUser(id) {
+  if (!confirm('Удалить пользователя?')) return;
+  const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    showSaveNotification(`❌ ${result.error || 'Не удалось удалить пользователя'}`, 'error');
+    return;
+  }
+  await loadUsers();
+  showSaveNotification('✅ Пользователь удалён');
+}
 
 function toggleSidebar() {
   if (currentTab === 'docs') return;

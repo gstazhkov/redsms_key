@@ -17,7 +17,8 @@ const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
-const LOGIN_PASSWORD = process.env.REDSMS_PASSWORD || 'redsms';
+const INITIAL_ADMIN_LOGIN = process.env.ADMIN_LOGIN || 'admin';
+const INITIAL_ADMIN_PASSWORD = process.env.REDSMS_PASSWORD || 'redsms';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const SESSION_COOKIE = 'redsms_session';
 
@@ -73,7 +74,45 @@ db.exec(`
     uploaded_at TEXT NOT NULL,
     size INTEGER NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    login TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('reader', 'editor', 'admin')),
+    created_at TEXT NOT NULL
+  );
 `);
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16);
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `${salt.toString('base64url')}.${derivedKey.toString('base64url')}`;
+}
+
+function verifyPassword(password, storedHash) {
+  const [saltText, hashText] = storedHash.split('.');
+  if (!saltText || !hashText) return false;
+  try {
+    const salt = Buffer.from(saltText, 'base64url');
+    const expected = Buffer.from(hashText, 'base64url');
+    const actual = crypto.scryptSync(password, salt, expected.length);
+    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
+}
+
+function seedAdminUser() {
+  const existing = db.prepare('SELECT id FROM users LIMIT 1').get();
+  if (existing) return;
+  db.prepare(
+    'INSERT INTO users (id, login, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(crypto.randomUUID(), INITIAL_ADMIN_LOGIN, hashPassword(INITIAL_ADMIN_PASSWORD), 'admin', new Date().toISOString());
+  console.log('Создан первоначальный пользователь администратора:', INITIAL_ADMIN_LOGIN);
+}
+
+seedAdminUser();
 
 function getCurrent() {
   const row = db.prepare('SELECT json_data, updated_at FROM kb_store WHERE id = 1').get();
@@ -139,10 +178,13 @@ seedWikiIfEmpty();
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-function createSession() {
+function createSession(user) {
   const payload = Buffer.from(JSON.stringify({
     exp: Date.now() + SESSION_TTL_MS,
-    nonce: crypto.randomBytes(16).toString('hex')
+    nonce: crypto.randomBytes(16).toString('hex'),
+    userId: user.id,
+    login: user.login,
+    role: user.role
   })).toString('base64url');
   const signature = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
   return `${payload}.${signature}`;
@@ -154,25 +196,32 @@ function getCookie(req, name) {
   return cookie ? decodeURIComponent(cookie.trim().slice(name.length + 1)) : null;
 }
 
-function hasValidSession(req) {
+function getSession(req) {
   const token = getCookie(req, SESSION_COOKIE);
-  if (!token) return false;
+  if (!token) return null;
 
   const [payload, signature] = token.split('.');
-  if (!payload || !signature) return false;
+  if (!payload || !signature) return null;
 
   const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
   const actualBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
   if (actualBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(actualBuffer, expectedBuffer)) {
-    return false;
+    return null;
   }
 
   try {
-    return JSON.parse(Buffer.from(payload, 'base64url').toString()).exp > Date.now();
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (session.exp <= Date.now() || !session.userId || !session.role) return null;
+    const user = db.prepare('SELECT id, login, role FROM users WHERE id = ?').get(session.userId);
+    return user && user.login === session.login && user.role === session.role ? user : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function hasValidSession(req) {
+  return Boolean(getSession(req));
 }
 
 const failedLogins = new Map();
@@ -199,11 +248,10 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(429).json({ error: 'Слишком много попыток. Повторите позже.' });
   }
 
+  const login = typeof req.body?.login === 'string' ? req.body.login.trim() : '';
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
-  const passwordBuffer = Buffer.from(password);
-  const expectedBuffer = Buffer.from(LOGIN_PASSWORD);
-  const valid = passwordBuffer.length === expectedBuffer.length
-    && crypto.timingSafeEqual(passwordBuffer, expectedBuffer);
+  const user = db.prepare('SELECT id, login, password_hash AS passwordHash, role FROM users WHERE login = ?').get(login);
+  const valid = user && verifyPassword(password, user.passwordHash);
 
   if (!valid) {
     recordFailedLogin(ip);
@@ -215,13 +263,17 @@ app.post('/api/auth/login', (req, res) => {
   const secureFlag = isHttps ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE}=${encodeURIComponent(createSession())}; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; SameSite=Lax; Path=/${secureFlag}`
+    `${SESSION_COOKIE}=${encodeURIComponent(createSession(user))}; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; SameSite=Lax; Path=/${secureFlag}`
   );
-  res.json({ ok: true });
+  res.json({ ok: true, user: { id: user.id, login: user.login, role: user.role } });
 });
 
 app.get('/api/auth/session', (req, res) => {
-  res.json({ authenticated: hasValidSession(req) });
+  const user = getSession(req);
+  res.json({
+    authenticated: Boolean(user),
+    user: user ? { id: user.id, login: user.login, role: user.role } : null
+  });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -238,11 +290,58 @@ app.get(['/', '/index.html'], (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 function requireAuth(req, res, next) {
-  if (!hasValidSession(req)) {
+  const user = getSession(req);
+  if (!user) {
     return res.status(401).json({ error: 'Требуется авторизация' });
   }
+  req.user = user;
   next();
 }
+
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Недостаточно прав' });
+    }
+    next();
+  };
+}
+
+const requireEditor = [requireAuth, requireRole('editor', 'admin')];
+const requireAdmin = [requireAuth, requireRole('admin')];
+
+app.get('/api/users', ...requireAdmin, (req, res) => {
+  const users = db.prepare(
+    'SELECT id, login, role, created_at AS createdAt FROM users ORDER BY login'
+  ).all();
+  res.json(users);
+});
+
+app.post('/api/users', ...requireAdmin, (req, res) => {
+  const login = typeof req.body?.login === 'string' ? req.body.login.trim() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const role = req.body?.role;
+  if (!/^[a-zA-Z0-9_.-]{3,50}$/.test(login) || password.length < 8 || !['reader', 'editor', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Логин: 3-50 символов; пароль: минимум 8; роль обязательна' });
+  }
+  try {
+    const user = { id: crypto.randomUUID(), login, role };
+    db.prepare(
+      'INSERT INTO users (id, login, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run(user.id, user.login, hashPassword(password), user.role, new Date().toISOString());
+    res.status(201).json(user);
+  } catch (error) {
+    if (String(error.message).includes('UNIQUE')) return res.status(409).json({ error: 'Такой логин уже существует' });
+    res.status(500).json({ error: 'Не удалось создать пользователя' });
+  }
+});
+
+app.delete('/api/users/:id', ...requireAdmin, (req, res) => {
+  if (req.params.id === req.user.id) return res.status(400).json({ error: 'Нельзя удалить текущего администратора' });
+  const result = db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+  if (!result.changes) return res.status(404).json({ error: 'Пользователь не найден' });
+  res.json({ ok: true });
+});
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -267,7 +366,7 @@ app.get('/api/docs', requireAuth, (req, res) => {
   res.json(rows);
 });
 
-app.post('/api/docs', requireAuth, upload.single('document'), (req, res) => {
+app.post('/api/docs', ...requireEditor, upload.single('document'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Выберите PDF-файл' });
   }
@@ -299,7 +398,7 @@ app.get('/api/docs/:id/download', requireAuth, (req, res) => {
   res.download(filePath, row.original_name);
 });
 
-app.delete('/api/docs/:id', requireAuth, (req, res) => {
+app.delete('/api/docs/:id', ...requireEditor, (req, res) => {
   const row = db.prepare('SELECT file_name FROM documents WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Документ не найден' });
   db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.id);
@@ -316,7 +415,7 @@ app.get('/api/kb', requireAuth, (req, res) => {
 });
 
 // Сохранить (перезаписать) данные целиком
-app.put('/api/kb', requireAuth, (req, res) => {
+app.put('/api/kb', ...requireEditor, (req, res) => {
   const body = req.body;
   if (!body || !Array.isArray(body.categories) || !Array.isArray(body.data)) {
     return res.status(400).json({ error: 'Некорректный формат данных' });
@@ -360,7 +459,7 @@ app.get('/api/kb/history', requireAuth, (req, res) => {
 });
 
 // Восстановить конкретную версию из истории
-app.post('/api/kb/history/:id/restore', requireAuth, (req, res) => {
+app.post('/api/kb/history/:id/restore', ...requireEditor, (req, res) => {
   const row = db.prepare('SELECT json_data FROM kb_history WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Версия не найдена' });
 
@@ -383,7 +482,7 @@ app.get('/api/wiki', requireAuth, (req, res) => {
 });
 
 // Сохранить (перезаписать) данные Wiki целиком
-app.put('/api/wiki', requireAuth, (req, res) => {
+app.put('/api/wiki', ...requireEditor, (req, res) => {
   const body = req.body;
   if (!body || !Array.isArray(body.pages)) {
     return res.status(400).json({ error: 'Некорректный формат данных Wiki' });
@@ -427,7 +526,7 @@ app.get('/api/wiki/history', requireAuth, (req, res) => {
 });
 
 // Восстановить конкретную версию Wiki из истории
-app.post('/api/wiki/history/:id/restore', requireAuth, (req, res) => {
+app.post('/api/wiki/history/:id/restore', ...requireEditor, (req, res) => {
   const row = db.prepare('SELECT json_data FROM wiki_history WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Версия не найдена' });
 
