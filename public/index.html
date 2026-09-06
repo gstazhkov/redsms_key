@@ -1496,7 +1496,7 @@
           <button onclick="execWikiCmd('outdent')" title="Поднять уровень">↰ Поднять</button>
           <button onclick="wikiFormatBlock('BLOCKQUOTE')" title="Цитата">❝ Цитата</button>
           <button onclick="toggleWikiCode()" title="Код">&lt;/&gt; Код</button>
-          <button onclick="wikiFormatBlock('P')" title="Завершить код и продолжить обычным текстом">↵ Текст</button>
+          <button onmousedown="event.preventDefault()" onclick="exitWikiCodeBlock()" title="Завершить код и продолжить обычным текстом">↵ Текст</button>
           <button onclick="insertWikiLink()" title="Ссылка">🔗 Ссылка</button>
           <button class="editor-only" onclick="createWikiPage(currentWikiPageId)" title="Добавить подстраницу">➕ Подстраница</button>
         </div>
@@ -3588,12 +3588,17 @@ function handleWikiContentClick(event) {
   selectWikiPage(link.dataset.wikiPageId);
 }
 
-function finishWikiCodeBlock(event) {
-  if (event.key !== 'Enter' || !event.ctrlKey) return;
+function exitWikiCodeBlock() {
+  const editor = document.getElementById('wiki-content');
   const selection = window.getSelection();
   const pre = selection?.anchorNode?.parentElement?.closest('pre');
-  if (!pre) return;
-  event.preventDefault();
+  if (!pre || !editor.contains(pre)) {
+    editor.focus();
+    document.execCommand('formatBlock', false, 'P');
+    updateCurrentPageContent();
+    return;
+  }
+
   const paragraph = document.createElement('p');
   paragraph.innerHTML = '<br>';
   pre.after(paragraph);
@@ -3602,7 +3607,14 @@ function finishWikiCodeBlock(event) {
   range.collapse(true);
   selection.removeAllRanges();
   selection.addRange(range);
+  editor.focus();
   updateCurrentPageContent();
+}
+
+function finishWikiCodeBlock(event) {
+  if (event.key !== 'Enter' || !event.ctrlKey) return;
+  event.preventDefault();
+  exitWikiCodeBlock();
 }
 
 function showWikiSaveIndicator() {
