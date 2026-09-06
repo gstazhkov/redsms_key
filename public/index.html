@@ -350,6 +350,14 @@
 
       .tab-nav {
         max-width: 100%;
+        gap: 0.25rem;
+        padding: 0.3rem;
+      }
+
+      .tab-btn {
+        min-height: 2.5rem;
+        padding: 0.5rem 0.35rem;
+        font-size: 0.78rem;
       }
 
       .content {
@@ -938,29 +946,31 @@
     /* ===== Tabs (KB / Wiki / Docs) ===== */
     .tab-nav {
       display: flex;
-      gap: 0.35rem;
-      max-width: 500px;
+      gap: 0.4rem;
+      max-width: 680px;
       margin: 1rem auto 0;
-      background: rgba(255,255,255,0.15);
+      background: rgba(125,30,22,0.32);
       backdrop-filter: blur(10px);
-      padding: 0.3rem;
-      border-radius: 8px;
+      padding: 0.4rem;
+      border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.3);
     }
 
     .tab-btn {
       flex: 1;
-      padding: 0.6rem 1rem;
+      min-height: 2.7rem;
+      padding: 0.6rem 0.8rem;
       border: none;
       background: transparent;
       color: white;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      border-radius: 6px;
+      border-radius: 7px;
       cursor: pointer;
       transition: all 0.2s;
       opacity: 0.85;
       font-family: inherit;
+      white-space: nowrap;
     }
 
     .tab-btn:hover {
@@ -972,6 +982,12 @@
       background: white;
       color: #E74C3C;
       opacity: 1;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.18);
+    }
+
+    .tab-btn:focus-visible {
+      outline: 3px solid rgba(255,255,255,0.9);
+      outline-offset: 2px;
     }
 
     .view-hidden {
@@ -1332,6 +1348,7 @@
     <div class="header-top">
       <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
       <h1>📚 RedSMS KW</h1>
+      <button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выйти</button>
     </div>
     <p>Найдите ответ за секунды</p>
     <div class="search-box">
