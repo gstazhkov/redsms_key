@@ -1,0 +1,26 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -eu
+            cd /root/redsms_key
+            git fetch origin main
+            git archive origin/main | tar --exclude='data' -x
+            npm install --omit=dev
+            pm2 restart redsms_key --update-env
+            echo "Deployed commit: $(git rev-parse --short origin/main)"
