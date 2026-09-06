@@ -25,11 +25,11 @@ jobs:
             set -eu
             cd /root/redsms_key
             git fetch origin main
+            test -n "${REDSMS_PASSWORD:-}"
+            test -n "${SESSION_SECRET:-}"
             git archive origin/main | tar --exclude='data' -x
             test -f public/login.html
             grep -q "/api/auth/login" public/index.html
-            test -n "${REDSMS_PASSWORD:-}"
-            test -n "${SESSION_SECRET:-}"
             npm install --omit=dev
             pm2 delete redsms_key 2>/dev/null || true
             REDSMS_PASSWORD="$REDSMS_PASSWORD" SESSION_SECRET="$SESSION_SECRET" NODE_ENV=production pm2 start server.js --name redsms_key
