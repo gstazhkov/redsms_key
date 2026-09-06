@@ -2324,7 +2324,6 @@ let kbData = {
 // см. server.js / API_URL ниже.
 
 const API_URL = '/api/kb';           // относительный путь — работает, если index.html отдаётся тем же сервером
-const API_KEY = 'redsms';            // должен совпадать со значением API_KEY на сервере
 let serverAvailable = true;          // текущее состояние связи с сервером
 
 let filteredData = [];
@@ -2526,8 +2525,7 @@ async function autoSave() {
     const res = await fetch(API_URL, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(kbData)
     });
@@ -2811,8 +2809,7 @@ async function autoSaveWiki() {
     const res = await fetch(API_WIKI_URL, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(wikiData)
     });
@@ -3102,10 +3099,8 @@ document.getElementById('modal').addEventListener('click', (e) => {
   if (e.target.id === 'modal') closeModal();
 });
 
-// Загружаем данные: сначала пытаемся получить их с сервера (это основной
-// источник истины), и только если сервер недоступен — используем то, что
-// уже сохранено локально в браузере (офлайн-резерв).
-(async function initData() {
+// Загружаем данные только после подтверждения серверной сессии.
+async function initData() {
   const gotFromServer = await loadFromServer();
   if (!gotFromServer) {
     loadFromStorage();
@@ -3120,7 +3115,7 @@ document.getElementById('modal').addEventListener('click', (e) => {
     loadWikiFromStorageCache();
   }
   renderWikiTree();
-})();
+}
 
 function copyToClipboard(elementId, button) {
   const element = document.getElementById(elementId);
@@ -3140,17 +3135,32 @@ function copyToClipboard(elementId, button) {
   });
 }
 
-function checkPassword() {
+async function checkPassword() {
   const password = document.getElementById('password-input').value;
   const errorDiv = document.getElementById('login-error');
-  
-  if (password === 'redsms') {
-    localStorage.setItem('redsms_authenticated', 'true');
-    showMainContent();
-    errorDiv.style.display = 'none';
-  } else {
+
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+
+    if (response.ok) {
+      await initData();
+      errorDiv.style.display = 'none';
+      document.getElementById('password-input').value = '';
+      showMainContent();
+      return;
+    }
+
+    const result = await response.json().catch(() => ({}));
+    errorDiv.textContent = result.error || 'Не удалось войти';
     errorDiv.style.display = 'block';
     document.getElementById('password-input').value = '';
+  } catch (error) {
+    errorDiv.textContent = 'Сервер недоступен';
+    errorDiv.style.display = 'block';
   }
 }
 
@@ -3174,8 +3184,8 @@ function showMainContent() {
   document.body.style.overflow = 'auto';
 }
 
-function logout() {
-  localStorage.removeItem('redsms_authenticated');
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
   document.getElementById('login-container').classList.remove('hidden');
   document.getElementById('logout-btn').style.display = 'none';
   document.getElementById('sidebar-toggle').style.display = 'none';
@@ -3183,17 +3193,22 @@ function logout() {
   document.body.style.overflow = 'hidden';
 }
 
-function checkAuthentication() {
-  const isAuthenticated = localStorage.getItem('redsms_authenticated') === 'true';
-  
-  if (isAuthenticated) {
-    showMainContent();
-  } else {
-    document.body.style.overflow = 'hidden';
+async function checkAuthentication() {
+  try {
+    const response = await fetch('/api/auth/session', { cache: 'no-store' });
+    const result = await response.json();
+    if (response.ok && result.authenticated) {
+      showMainContent();
+      await initData();
+      return;
+    }
+  } catch (error) {
+    console.warn('Не удалось проверить серверную сессию:', error);
   }
+
+  document.body.style.overflow = 'hidden';
 }
 
-// Check authentication on page load
 checkAuthentication();
 
 function toggleSidebar() {
@@ -3222,7 +3237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Handle window resize to show/hide menu button
 window.addEventListener('resize', function() {
-  const isAuthenticated = localStorage.getItem('redsms_authenticated') === 'true';
+  const isAuthenticated = document.getElementById('login-container').classList.contains('hidden');
   if (isAuthenticated) {
     const toggleBtn = document.getElementById('sidebar-toggle');
     if (window.innerWidth <= 768) {

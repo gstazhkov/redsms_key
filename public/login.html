@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход | RedSMS KB</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f6f8; color: #263238; }
+    main { width: min(92vw, 380px); padding: 2rem; background: white; border: 1px solid #e1e6e9; border-radius: 10px; box-shadow: 0 12px 32px rgba(38, 50, 56, .12); }
+    h1 { margin: 0 0 .5rem; font-size: 1.7rem; }
+    p { margin: 0 0 1.5rem; color: #66757d; }
+    label { display: block; margin-bottom: .4rem; font-size: .9rem; font-weight: 600; }
+    input, button { width: 100%; padding: .8rem 1rem; font: inherit; border-radius: 6px; }
+    input { border: 1px solid #cbd4d9; }
+    input:focus { outline: 3px solid rgba(231, 76, 60, .2); border-color: #e74c3c; }
+    button { margin-top: 1rem; border: 0; background: #e74c3c; color: white; cursor: pointer; font-weight: 600; }
+    button:disabled { opacity: .65; cursor: wait; }
+    [role="alert"] { min-height: 1.3rem; margin-top: .8rem; color: #c0392b; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>RedSMS KB</h1>
+    <p>Введите пароль для доступа</p>
+    <form id="login-form">
+      <label for="password">Пароль</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+      <button type="submit">Войти</button>
+      <div id="error" role="alert" aria-live="polite"></div>
+    </form>
+  </main>
+  <script>
+    const form = document.getElementById('login-form');
+    const password = document.getElementById('password');
+    const error = document.getElementById('error');
+    const button = form.querySelector('button');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      error.textContent = '';
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: password.value })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Не удалось войти');
+        location.href = '/index.html';
+      } catch (loginError) {
+        error.textContent = loginError.message;
+        password.value = '';
+        password.focus();
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
