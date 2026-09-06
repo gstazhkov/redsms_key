@@ -1240,7 +1240,7 @@
   <div id="add-modal" class="modal">
     <div class="modal-content">
       <button class="modal-close" onclick="closeAddModal()">✕</button>
-      <h2>➕ Добавить новую карточку</h2>
+      <h2 id="card-form-title">➕ Добавить новую карточку</h2>
       <div id="add-form">
         <div class="form-group">
           <label>Название</label>
@@ -1266,8 +1266,20 @@
           <label>Текст ответа</label>
           <textarea id="new-response" placeholder="Введите текст ответа"></textarea>
         </div>
+        <div class="form-group">
+          <label>Триггер <span style="font-weight:normal;color:#95A5A6;">(необязательно)</span></label>
+          <textarea id="new-trigger" placeholder="Когда использовать карточку"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Что делать <span style="font-weight:normal;color:#95A5A6;">(необязательно)</span></label>
+          <textarea id="new-action" placeholder="Инструкция для оператора"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Дополнительная информация <span style="font-weight:normal;color:#95A5A6;">(необязательно)</span></label>
+          <textarea id="new-info" placeholder="Дополнительная информация"></textarea>
+        </div>
         <div class="form-actions">
-          <button class="btn-save" onclick="saveNewCard()">Сохранить</button>
+          <button class="btn-save" id="card-form-save" onclick="saveCard()">Сохранить</button>
           <button class="btn-cancel" onclick="closeAddModal()">Отмена</button>
         </div>
       </div>
@@ -2387,6 +2399,7 @@ function openModal(id) {
           <button class="status-btn ${item.status === 'draft' ? 'active' : ''}" data-status="draft" onclick="changeStatus(${item.id}, 'draft')">📝 Черновик</button>
           <button class="status-btn ${item.status === 'internal' ? 'active' : ''}" data-status="internal" onclick="changeStatus(${item.id}, 'internal')">🔒 Внутреннее</button>
         </div>
+        <button style="margin-top: 0.75rem; margin-right: 0.5rem; padding: 0.5rem 1rem; background: #3498DB; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="editCard(${item.id})">✏️ Редактировать</button>
         <button style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="deleteCard(${item.id})">🗑️ Удалить</button>
       </div>
     </div>
@@ -2448,13 +2461,46 @@ function openAddNewForm() {
   document.getElementById('new-title').value = '';
   document.getElementById('new-description').value = '';
   document.getElementById('new-response').value = '';
+  document.getElementById('new-trigger').value = '';
+  document.getElementById('new-action').value = '';
+  document.getElementById('new-info').value = '';
   document.getElementById('new-status').value = 'draft';
+  document.getElementById('card-form-title').textContent = '➕ Добавить новую карточку';
+  document.getElementById('card-form-save').textContent = 'Сохранить';
+  document.getElementById('add-modal').dataset.editingId = '';
   
+  document.getElementById('add-modal').classList.add('active');
+}
+
+function editCard(id) {
+  const item = kbData.data.find(card => card.id === id);
+  if (!item) return;
+
+  const categorySelect = document.getElementById('new-category');
+  categorySelect.innerHTML = kbData.categories
+    .filter(category => category.id !== 'all')
+    .map(category => `<option value="${category.id}">${category.label}</option>`)
+    .join('');
+
+  const details = item.details || {};
+  document.getElementById('new-title').value = item.title || '';
+  document.getElementById('new-description').value = item.description || '';
+  document.getElementById('new-category').value = item.category || '';
+  document.getElementById('new-status').value = item.status || 'draft';
+  document.getElementById('new-response').value = details.response || '';
+  document.getElementById('new-trigger').value = details.trigger || '';
+  document.getElementById('new-action').value = details.action || details.actions || '';
+  document.getElementById('new-info').value = details.info || '';
+  document.getElementById('card-form-title').textContent = '✏️ Редактировать карточку';
+  document.getElementById('card-form-save').textContent = 'Сохранить изменения';
+  document.getElementById('add-modal').dataset.editingId = String(id);
+  closeModal();
   document.getElementById('add-modal').classList.add('active');
 }
 
 function closeAddModal() {
   document.getElementById('add-modal').classList.remove('active');
+  document.getElementById('add-modal').dataset.editingId = '';
 }
 
 function showSaveNotification(message, type = 'success') {
@@ -2578,39 +2624,66 @@ function importData(event) {
   event.target.value = '';
 }
 
-async function saveNewCard() {
+async function saveCard() {
   const title = document.getElementById('new-title').value.trim();
   const description = document.getElementById('new-description').value.trim();
   const category = document.getElementById('new-category').value;
   const status = document.getElementById('new-status').value;
   const response = document.getElementById('new-response').value.trim();
+  const trigger = document.getElementById('new-trigger').value.trim();
+  const action = document.getElementById('new-action').value.trim();
+  const info = document.getElementById('new-info').value.trim();
 
   if (!title || !category) {
     alert('Заполните названия и выберите категорию');
     return;
   }
 
-  const newId = Math.max(...kbData.data.map(d => d.id), 0) + 1;
-  
-  const newCard = {
-    id: newId,
-    title: title,
-    category: category,
-    status: status,
-    description: description,
-    details: {
-      response: response || 'Нет информации'
-    }
-  };
+  const editingId = document.getElementById('add-modal').dataset.editingId;
+  const item = editingId ? kbData.data.find(card => String(card.id) === editingId) : null;
+  const details = item ? { ...(item.details || {}) } : {};
+  const detailValues = { response, trigger, info };
 
-  kbData.data.push(newCard);
+  Object.entries(detailValues).forEach(([key, value]) => {
+    if (value) {
+      details[key] = value;
+    } else {
+      delete details[key];
+    }
+  });
+  if (action) {
+    details.action = action;
+    delete details.actions;
+  } else {
+    delete details.action;
+    delete details.actions;
+  }
+  if (!details.response) details.response = 'Нет информации';
+
+  if (item) {
+    item.title = title;
+    item.description = description;
+    item.category = category;
+    item.status = status;
+    item.details = details;
+  } else {
+    const newId = Math.max(...kbData.data.map(d => d.id), 0) + 1;
+    kbData.data.push({ id: newId, title, category, status, description, details });
+  }
+
   const saved = await autoSave();
 
   closeAddModal();
   filterCards();
   if (saved) {
-    showSaveNotification('✅ Карточка добавлена и сохранена на сервере!');
+    showSaveNotification(item
+      ? '✅ Изменения сохранены на сервере!'
+      : '✅ Карточка добавлена и сохранена на сервере!');
   }
+}
+
+function saveNewCard() {
+  return saveCard();
 }
 
 async function changeStatus(id, newStatus) {
