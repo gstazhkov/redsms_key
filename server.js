@@ -199,7 +199,8 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   failedLogins.delete(ip);
-  const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const isHttps = req.secure || req.get('x-forwarded-proto') === 'https';
+  const secureFlag = isHttps ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
     `${SESSION_COOKIE}=${encodeURIComponent(createSession())}; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; SameSite=Lax; Path=/${secureFlag}`
