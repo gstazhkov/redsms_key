@@ -1492,8 +1492,11 @@
           <button onclick="wikiFormatBlock('P')" title="Обычный текст">¶</button>
           <button onclick="execWikiCmd('insertUnorderedList')" title="Маркированный список">• Список</button>
           <button onclick="execWikiCmd('insertOrderedList')" title="Нумерованный список">1. Список</button>
+          <button onclick="execWikiCmd('indent')" title="Сделать вложенным">↳ Вложить</button>
+          <button onclick="execWikiCmd('outdent')" title="Поднять уровень">↰ Поднять</button>
           <button onclick="wikiFormatBlock('BLOCKQUOTE')" title="Цитата">❝ Цитата</button>
-          <button onclick="wikiFormatBlock('PRE')" title="Код">&lt;/&gt; Код</button>
+          <button onclick="toggleWikiCode()" title="Код">&lt;/&gt; Код</button>
+          <button onclick="wikiFormatBlock('P')" title="Завершить код и продолжить обычным текстом">↵ Текст</button>
           <button onclick="insertWikiLink()" title="Ссылка">🔗 Ссылка</button>
           <button class="editor-only" onclick="createWikiPage(currentWikiPageId)" title="Добавить подстраницу">➕ Подстраница</button>
         </div>
@@ -3446,6 +3449,12 @@ function renderWikiTree() {
   treeEl.innerHTML = renderLevel(null);
 }
 
+function appendWikiChildLink(parentPage, childPage) {
+  const link = `<p><a href="#wiki-page=${childPage.id}" data-wiki-page-id="${childPage.id}">📄 ${escapeWikiHtml(childPage.title || 'Новая подстраница')}</a></p>`;
+  parentPage.content = `${parentPage.content || ''}${link}`;
+  parentPage.updatedAt = new Date().toISOString();
+}
+
 function renderWikiBreadcrumb(id) {
   const breadcrumbEl = document.getElementById('wiki-breadcrumb');
   const chain = [];
@@ -3490,7 +3499,9 @@ async function createWikiPage(parentId) {
     content: '',
     updatedAt: new Date().toISOString()
   };
+  const parentPage = parentId ? wikiData.pages.find(page => page.id === parentId) : null;
   wikiData.pages.push(newPage);
+  if (parentPage) appendWikiChildLink(parentPage, newPage);
   const saved = await autoSaveWiki();
   renderWikiTree();
   selectWikiPage(newId);
@@ -3538,6 +3549,17 @@ function updateCurrentPageTitle(value) {
   if (!page) return;
   page.title = value;
   page.updatedAt = new Date().toISOString();
+  wikiData.pages.forEach(parent => {
+    if (!parent.content || !parent.content.includes(`data-wiki-page-id="${page.id}"`)) return;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = parent.content;
+    const link = wrapper.querySelector(`[data-wiki-page-id="${CSS.escape(page.id)}"]`);
+    if (link) {
+      link.textContent = `📄 ${value || 'Новая подстраница'}`;
+      parent.content = wrapper.innerHTML;
+      parent.updatedAt = new Date().toISOString();
+    }
+  });
   clearTimeout(wikiSaveTimeout);
   wikiSaveTimeout = setTimeout(async () => {
     await autoSaveWiki();
@@ -3559,6 +3581,30 @@ function updateCurrentPageContent() {
   }, 600);
 }
 
+function handleWikiContentClick(event) {
+  const link = event.target.closest('a[data-wiki-page-id]');
+  if (!link) return;
+  event.preventDefault();
+  selectWikiPage(link.dataset.wikiPageId);
+}
+
+function finishWikiCodeBlock(event) {
+  if (event.key !== 'Enter' || !event.ctrlKey) return;
+  const selection = window.getSelection();
+  const pre = selection?.anchorNode?.parentElement?.closest('pre');
+  if (!pre) return;
+  event.preventDefault();
+  const paragraph = document.createElement('p');
+  paragraph.innerHTML = '<br>';
+  pre.after(paragraph);
+  const range = document.createRange();
+  range.selectNodeContents(paragraph);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  updateCurrentPageContent();
+}
+
 function showWikiSaveIndicator() {
   const indicator = document.getElementById('wiki-save-indicator');
   if (!indicator) return;
@@ -3571,6 +3617,15 @@ function showWikiSaveIndicator() {
 function execWikiCmd(cmd, value = null) {
   document.getElementById('wiki-content').focus();
   document.execCommand(cmd, false, value);
+  updateCurrentPageContent();
+}
+
+function toggleWikiCode() {
+  const editor = document.getElementById('wiki-content');
+  editor.focus();
+  const selection = window.getSelection();
+  const block = selection?.anchorNode?.parentElement?.closest('pre');
+  document.execCommand('formatBlock', false, block ? 'P' : 'PRE');
   updateCurrentPageContent();
 }
 
@@ -3594,6 +3649,8 @@ searchClear.addEventListener('click', () => {
   filterCards();
 });
 document.getElementById('ai-form').addEventListener('submit', sendAiMessage);
+document.getElementById('wiki-content').addEventListener('click', handleWikiContentClick);
+document.getElementById('wiki-content').addEventListener('keydown', finishWikiCodeBlock);
 document.getElementById('ai-input').addEventListener('keydown', event => {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
