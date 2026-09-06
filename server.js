@@ -82,7 +82,40 @@ db.exec(`
     role TEXT NOT NULL CHECK (role IN ('reader', 'editor', 'admin')),
     created_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS ai_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    base_url TEXT NOT NULL,
+    model TEXT NOT NULL,
+    username TEXT NOT NULL,
+    encrypted_secret TEXT NOT NULL,
+    system_prompt TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
+
+function encryptSecret(value) {
+  const iv = crypto.randomBytes(12);
+  const key = crypto.createHash('sha256').update(SESSION_SECRET).digest();
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return [iv, cipher.getAuthTag(), encrypted].map(part => part.toString('base64url')).join('.');
+}
+
+function decryptSecret(value) {
+  try {
+    const [ivText, tagText, encryptedText] = value.split('.');
+    const key = crypto.createHash('sha256').update(SESSION_SECRET).digest();
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivText, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tagText, 'base64url'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedText, 'base64url')),
+      decipher.final()
+    ]).toString('utf8');
+  } catch {
+    return '';
+  }
+}
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16);
@@ -344,6 +377,87 @@ app.delete('/api/users/:id', ...requireAdmin, (req, res) => {
   const result = db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
   if (!result.changes) return res.status(404).json({ error: 'Пользователь не найден' });
   res.json({ ok: true });
+});
+
+app.get('/api/ai/settings', ...requireAdmin, (req, res) => {
+  const settings = db.prepare(
+    'SELECT base_url AS baseUrl, model, username, system_prompt AS systemPrompt, updated_at AS updatedAt FROM ai_settings WHERE id = 1'
+  ).get();
+  res.json(settings ? { ...settings, configured: true } : { configured: false });
+});
+
+app.put('/api/ai/settings', ...requireAdmin, (req, res) => {
+  const baseUrl = typeof req.body?.baseUrl === 'string' ? req.body.baseUrl.trim() : '';
+  const model = typeof req.body?.model === 'string' ? req.body.model.trim() : '';
+  const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+  const secret = typeof req.body?.secret === 'string' ? req.body.secret : '';
+  const systemPrompt = typeof req.body?.systemPrompt === 'string' ? req.body.systemPrompt.trim() : '';
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(baseUrl);
+  } catch {
+    return res.status(400).json({ error: 'Укажите корректный URL AI-сервера' });
+  }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol) || !model || model.length > 200 || systemPrompt.length > 10000) {
+    return res.status(400).json({ error: 'Проверьте URL, модель и системную инструкцию' });
+  }
+
+  const existing = db.prepare('SELECT encrypted_secret FROM ai_settings WHERE id = 1').get();
+  const encryptedSecret = secret ? encryptSecret(secret) : existing?.encrypted_secret || '';
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO ai_settings (id, base_url, model, username, encrypted_secret, system_prompt, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET base_url = excluded.base_url, model = excluded.model,
+       username = excluded.username, encrypted_secret = excluded.encrypted_secret,
+       system_prompt = excluded.system_prompt, updated_at = excluded.updated_at`
+  ).run(baseUrl, model, username, encryptedSecret, systemPrompt, now);
+  res.json({ ok: true, updatedAt: now });
+});
+
+app.post('/api/ai/chat', requireAuth, async (req, res) => {
+  const settings = db.prepare('SELECT * FROM ai_settings WHERE id = 1').get();
+  if (!settings) return res.status(503).json({ error: 'AI-ассистент ещё не настроен администратором' });
+
+  const inputMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const messages = inputMessages
+    .filter(message => message && ['user', 'assistant'].includes(message.role) && typeof message.content === 'string')
+    .slice(-20)
+    .map(message => ({ role: message.role, content: message.content.slice(0, 12000) }));
+  if (!messages.length) return res.status(400).json({ error: 'Введите сообщение' });
+
+  const endpoint = settings.base_url.replace(/\/$/, '').endsWith('/chat/completions')
+    ? settings.base_url
+    : `${settings.base_url.replace(/\/$/, '')}/v1/chat/completions`;
+  const headers = { 'Content-Type': 'application/json' };
+  const secret = decryptSecret(settings.encrypted_secret);
+  if (secret) headers.Authorization = `Bearer ${secret}`;
+  if (settings.username) headers['X-API-Username'] = settings.username;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      signal: AbortSignal.timeout(120000),
+      body: JSON.stringify({
+        model: settings.model,
+        messages: [{ role: 'system', content: settings.system_prompt }, ...messages],
+        temperature: 0.2
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('AI-сервер вернул ошибку:', response.status, result);
+      return res.status(502).json({ error: 'AI-сервер вернул ошибку' });
+    }
+    const content = result.choices?.[0]?.message?.content;
+    if (typeof content !== 'string') return res.status(502).json({ error: 'AI-сервер вернул пустой ответ' });
+    res.json({ content });
+  } catch (error) {
+    console.error('Не удалось обратиться к AI-серверу:', error.message);
+    res.status(502).json({ error: 'AI-сервер недоступен' });
+  }
 });
 
 const upload = multer({
