@@ -792,6 +792,30 @@
       font-weight: 600;
       transition: all 0.2s;
     }
+      .settings-account {
+        display: grid;
+        gap: 0.3rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #F8F9FA;
+        border: 1px solid #ECF0F1;
+        border-radius: 6px;
+      }
+
+      .settings-account span { color: #7F8C8D; font-size: 0.85rem; }
+
+      .logout-settings-btn {
+        width: 100%;
+        margin-top: 0.6rem;
+        padding: 0.65rem;
+        border: 1px solid #E74C3C;
+        border-radius: 5px;
+        background: white;
+        color: #C0392B;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+      }
 
     .user-badge {
       display: none;
@@ -866,8 +890,7 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
+        .sidebar-toggle {
       transition: all 0.2s;
       flex: 1;
     }
@@ -1309,8 +1332,6 @@
     <div class="header-top">
       <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰ Меню</button>
       <h1>📚 RedSMS KW</h1>
-      <span class="user-badge" id="user-badge"></span>
-      <button class="logout-btn" id="logout-btn" style="display:none;" onclick="logout()">🚪 Выход</button>
     </div>
     <p>Найдите ответ за секунды</p>
     <div class="search-box">
@@ -1334,7 +1355,7 @@
         <button class="import-btn editor-only" onclick="document.getElementById('import-input').click()">📤 Импорт</button>
         <input type="file" id="import-input" accept=".json" onchange="importData(event)">
       </div>
-      <button class="settings-btn admin-only" onclick="openUsersModal()">⚙️ Настройки</button>
+      <button class="settings-btn" onclick="openSettingsModal()">⚙️ Настройки</button>
     </div>
 
     <div id="cards-container" class="cards-grid"></div>
@@ -1351,7 +1372,7 @@
         <button class="import-btn editor-only" onclick="document.getElementById('wiki-import-input').click()">📤 Импорт</button>
         <input type="file" id="wiki-import-input" accept=".json" onchange="importWikiData(event)">
       </div>
-      <button class="settings-btn admin-only" onclick="openUsersModal()">⚙️ Настройки</button>
+      <button class="settings-btn" onclick="openSettingsModal()">⚙️ Настройки</button>
     </div>
 
     <div class="wiki-main" id="wiki-main">
@@ -1407,8 +1428,15 @@
 
   <div id="users-modal" class="modal">
     <div class="modal-content">
-      <button class="modal-close" onclick="closeUsersModal()">✕</button>
-      <h2>Пользователи</h2>
+      <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+      <h2>Настройки</h2>
+      <div class="settings-account">
+        <strong id="settings-user-login"></strong>
+        <span id="settings-user-role"></span>
+        <button class="logout-settings-btn" onclick="logout()">🚪 Выйти из аккаунта</button>
+      </div>
+      <div class="admin-only">
+      <h3>Пользователи</h3>
       <div class="form-group">
         <label>Логин</label>
         <input type="text" id="user-login" placeholder="Например, operator1">
@@ -1427,6 +1455,7 @@
       </div>
       <button class="btn-save" onclick="createUser()">Добавить пользователя</button>
       <div id="users-list" style="margin-top:1.5rem;"></div>
+      </div>
     </div>
   </div>
 
@@ -3482,13 +3511,11 @@ function handleKeyPress(event) {
 
 function showMainContent() {
   document.getElementById('login-container').classList.add('hidden');
-  document.getElementById('logout-btn').style.display = 'block';
-  const badge = document.getElementById('user-badge');
   if (currentUser) {
     const roleNames = { reader: 'чтение', editor: 'редактор', admin: 'администратор' };
     document.body.dataset.role = currentUser.role;
-    badge.textContent = `${currentUser.login} · ${roleNames[currentUser.role] || currentUser.role}`;
-    badge.style.display = 'inline-block';
+    document.getElementById('settings-user-login').textContent = currentUser.login;
+    document.getElementById('settings-user-role').textContent = `Роль: ${roleNames[currentUser.role] || currentUser.role}`;
   }
   
   // Показывать кнопку меню только на мобильных/планшетах
@@ -3503,9 +3530,8 @@ function showMainContent() {
 
 async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  closeSettingsModal();
   document.getElementById('login-container').classList.remove('hidden');
-  document.getElementById('logout-btn').style.display = 'none';
-  document.getElementById('user-badge').style.display = 'none';
   document.body.removeAttribute('data-role');
   currentUser = null;
   document.getElementById('login-input').value = '';
@@ -3533,12 +3559,12 @@ async function checkAuthentication() {
 
 checkAuthentication();
 
-async function openUsersModal() {
+async function openSettingsModal() {
   document.getElementById('users-modal').classList.add('active');
-  await loadUsers();
+  if (currentUser?.role === 'admin') await loadUsers();
 }
 
-function closeUsersModal() {
+function closeSettingsModal() {
   document.getElementById('users-modal').classList.remove('active');
 }
 
