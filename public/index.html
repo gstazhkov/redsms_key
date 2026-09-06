@@ -69,6 +69,24 @@
       box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
     }
 
+    .search-clear {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      min-width: 2.5rem;
+      border: 0;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.9);
+      color: #7F8C8D;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .search-clear.visible { display: flex; }
+    .search-clear:hover { color: #E74C3C; background: white; }
+
     .content {
       padding: 2rem;
       display: grid;
@@ -1410,6 +1428,7 @@
     <p>Найдите ответ за секунды</p>
     <div class="search-box">
       <input type="text" id="search" placeholder="Ищите по ключевому слову...">
+      <button class="search-clear" id="search-clear" type="button" aria-label="Очистить поиск" title="Очистить поиск">✕</button>
     </div>
     <div class="tab-nav">
       <button class="tab-btn active" id="tab-btn-kb" onclick="switchTab('kb')">📚 База шаблонов</button>
@@ -2655,6 +2674,7 @@ let currentCategory = "all";
 
 const cardsContainer = document.getElementById('cards-container');
 const searchInput = document.getElementById('search');
+const searchClear = document.getElementById('search-clear');
 const categoriesList = document.getElementById('categories-list');
 
 function renderCategories() {
@@ -2700,6 +2720,7 @@ function renderCards() {
 }
 
 function filterCards() {
+  searchClear.classList.toggle('visible', searchInput.value.length > 0);
   filteredData = kbData.data.filter(item => {
     const matchCategory = currentCategory === 'all' || item.category === currentCategory;
     const matchSearch = item.title.toLowerCase().includes(searchInput.value.toLowerCase()) ||
@@ -3562,6 +3583,11 @@ function insertWikiLink() {
 }
 
 searchInput.addEventListener('input', filterCards);
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchInput.focus();
+  filterCards();
+});
 document.getElementById('ai-form').addEventListener('submit', sendAiMessage);
 
 document.getElementById('modal').addEventListener('click', (e) => {
