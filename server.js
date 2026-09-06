@@ -283,6 +283,9 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get(['/', '/index.html'], (req, res) => {
   const page = hasValidSession(req) ? 'index.html' : 'login.html';
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', page));
 });
 
