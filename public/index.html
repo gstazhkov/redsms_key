@@ -221,18 +221,31 @@
 
     .modal-close {
       position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 2.75rem;
+      height: 2.75rem;
+      display: grid;
+      place-items: center;
+      background: #FDEDEC;
       border: none;
-      font-size: 1.5rem;
+      border-radius: 50%;
+      font-size: 1.35rem;
+      font-weight: 700;
       cursor: pointer;
-      color: #95A5A6;
+      color: #C0392B;
       transition: color 0.2s;
     }
 
     .modal-close:hover {
-      color: #E74C3C;
+      color: white;
+      background: #E74C3C;
+    }
+
+    .modal-close:focus-visible,
+    .sidebar-toggle:focus-visible {
+      outline: 3px solid rgba(255,255,255,0.85);
+      outline-offset: 2px;
     }
 
     .modal h2 {
@@ -321,7 +334,8 @@
       .sidebar-toggle,
       .logout-btn {
         display: inline-block !important;
-        padding: 0.45rem 0.7rem;
+        min-height: 2.75rem;
+        padding: 0.55rem 0.8rem;
         font-size: 0.9rem;
       }
 
@@ -358,6 +372,10 @@
         border: none;
         padding: 1rem;
         overflow-y: auto;
+      }
+
+      .sidebar.open {
+        box-shadow: 0 8px 24px rgba(44, 62, 80, 0.2);
       }
 
       .sidebar.open {
@@ -2458,6 +2476,9 @@ function renderCategories() {
       btn.classList.add('active');
       currentCategory = btn.dataset.category;
       filterCards();
+        if (window.innerWidth <= 768) {
+          document.getElementById('kb-sidebar').classList.remove('open');
+        }
     });
   });
 }
