@@ -1415,6 +1415,12 @@
       text-decoration: underline;
     }
 
+    .wiki-title-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
     .wiki-title-input {
       width: 100%;
       border: none;
@@ -1422,7 +1428,6 @@
       font-size: 2rem;
       font-weight: 700;
       color: #2C3E50;
-      margin-bottom: 0.4rem;
       font-family: inherit;
     }
 
@@ -1485,6 +1490,45 @@
       background: #ECF0F1;
       border-color: #E74C3C;
       color: #E74C3C;
+    }
+
+    .wiki-color-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1px solid #ECF0F1;
+      background: #F8F9FA;
+      color: #34495E;
+      border-radius: 4px;
+      padding: 0.25rem 0.45rem;
+      font-size: 0.8rem;
+    }
+
+    .wiki-color-control input {
+      width: 1.65rem;
+      height: 1.65rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .wiki-page-icon-input {
+      width: 3rem;
+      min-width: 3rem;
+      margin-right: 0.5rem;
+      padding: 0.35rem;
+      border: 1px solid #ECF0F1;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 1.35rem;
+      line-height: 1.2;
+    }
+
+    .wiki-page-icon-input:focus {
+      outline: none;
+      border-color: #E74C3C;
+      box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.12);
     }
 
     .wiki-content-editable {
@@ -1727,7 +1771,10 @@
 
       <div id="wiki-editor" style="display:none;">
         <div class="wiki-breadcrumb" id="wiki-breadcrumb"></div>
-        <input type="text" id="wiki-title-input" class="wiki-title-input" placeholder="Без названия" oninput="updateCurrentPageTitle(this.value)">
+        <div class="wiki-title-row">
+          <input type="text" id="wiki-page-icon-input" class="wiki-page-icon-input" maxlength="4" value="📄" aria-label="Иконка страницы" title="Иконка страницы" oninput="updateCurrentPageIcon(this.value)">
+          <input type="text" id="wiki-title-input" class="wiki-title-input" placeholder="Без названия" oninput="updateCurrentPageTitle(this.value)">
+        </div>
         <div class="wiki-meta">
           <span id="wiki-updated-at"></span>
           <span id="wiki-updated-by"></span>
@@ -1738,6 +1785,7 @@
           <button onclick="execWikiCmd('bold')" title="Жирный"><b>B</b></button>
           <button onclick="execWikiCmd('italic')" title="Курсив"><i>I</i></button>
           <button onclick="execWikiCmd('underline')" title="Подчёркнутый"><u>U</u></button>
+          <label class="wiki-color-control" title="Цвет выделенного текста">A <input type="color" value="#2C3E50" aria-label="Цвет текста" oninput="execWikiCmd('foreColor', this.value)"></label>
           <button onclick="wikiFormatBlock('H1')" title="Заголовок 1">H1</button>
           <button onclick="wikiFormatBlock('H2')" title="Заголовок 2">H2</button>
           <button onclick="wikiFormatBlock('P')" title="Обычный текст">¶</button>
@@ -3905,7 +3953,7 @@ function renderWikiTree() {
           ondrop="handleWikiDrop(event, '${page.id}')"
           onclick="selectWikiPage('${page.id}')">
           <button class="wiki-page-toggle ${getWikiChildren(page.id).length ? '' : 'empty'}" onclick="toggleWikiPage('${page.id}', event)" aria-label="${collapsedWikiPages.has(page.id) ? 'Развернуть' : 'Свернуть'}">${collapsedWikiPages.has(page.id) ? '▸' : '▾'}</button>
-          <span class="wiki-page-title-text">${page.icon || '📄'} ${escapeWikiHtml(page.title || 'Без названия')}</span>
+          <span class="wiki-page-title-text">${escapeWikiHtml(page.icon || '📄')} ${escapeWikiHtml(page.title || 'Без названия')}</span>
           <span class="wiki-page-actions">
             <button onclick="event.stopPropagation(); createWikiPage('${page.id}')" title="Добавить подстраницу">➕</button>
             <button onclick="event.stopPropagation(); deleteWikiPage('${page.id}')" title="Удалить">🗑️</button>
@@ -3941,7 +3989,7 @@ function renderWikiBreadcrumb(id) {
     page = wikiData.pages.find(p => p.id === page.parentId);
   }
   breadcrumbEl.innerHTML = chain.map(p =>
-    `<span onclick="selectWikiPage('${p.id}')">${p.icon || '📄'} ${escapeWikiHtml(p.title || 'Без названия')}</span>`
+    `<span onclick="selectWikiPage('${p.id}')">${escapeWikiHtml(p.icon || '📄')} ${escapeWikiHtml(p.title || 'Без названия')}</span>`
   ).join(' &nbsp;/&nbsp; ');
 }
 
@@ -3953,6 +4001,7 @@ function selectWikiPage(id) {
   document.getElementById('wiki-empty').style.display = 'none';
   document.getElementById('wiki-editor').style.display = 'block';
 
+  document.getElementById('wiki-page-icon-input').value = page.icon || '📄';
   document.getElementById('wiki-title-input').value = page.title || '';
   document.getElementById('wiki-content').innerHTML = page.content || '';
   document.querySelectorAll('#wiki-content > p, #wiki-content > h1, #wiki-content > h2, #wiki-content > h3, #wiki-content > blockquote, #wiki-content > pre, #wiki-content > ul > li, #wiki-content > ol > li').forEach(block => {
@@ -4044,7 +4093,34 @@ function updateCurrentPageTitle(value) {
     wrapper.innerHTML = parent.content;
     const link = wrapper.querySelector(`[data-wiki-page-id="${CSS.escape(page.id)}"]`);
     if (link) {
-      link.textContent = `📄 ${value || 'Новая подстраница'}`;
+      link.textContent = `${page.icon || '📄'} ${value || 'Новая подстраница'}`;
+      parent.content = wrapper.innerHTML;
+      parent.updatedAt = new Date().toISOString();
+    }
+  });
+  clearTimeout(wikiSaveTimeout);
+  wikiSaveTimeout = setTimeout(async () => {
+    await autoSaveWiki();
+    showWikiSaveIndicator();
+    renderWikiTree();
+    renderWikiBreadcrumb(currentWikiPageId);
+  }, 500);
+}
+
+function updateCurrentPageIcon(value) {
+  const page = wikiData.pages.find(p => p.id === currentWikiPageId);
+  if (!page) return;
+  page.icon = value.trim().slice(0, 4) || '📄';
+  page.updatedAt = new Date().toISOString();
+  page.updatedBy = currentUser?.id || page.updatedBy;
+  page.updatedByLogin = currentUser?.login || page.updatedByLogin;
+  wikiData.pages.forEach(parent => {
+    if (!parent.content || !parent.content.includes(`data-wiki-page-id="${page.id}"`)) return;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = parent.content;
+    const link = wrapper.querySelector(`[data-wiki-page-id="${CSS.escape(page.id)}"]`);
+    if (link) {
+      link.textContent = `${page.icon} ${page.title || 'Новая подстраница'}`;
       parent.content = wrapper.innerHTML;
       parent.updatedAt = new Date().toISOString();
     }
