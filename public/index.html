@@ -1112,6 +1112,35 @@
       background: white;
     }
 
+    .docs-file-input {
+      display: none;
+    }
+
+    .docs-file-picker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.6rem;
+      padding: 0.6rem 1rem;
+      border: 1px solid #D7DEE2;
+      border-radius: 5px;
+      background: white;
+      color: #34495E;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+    }
+
+    .docs-file-name {
+      display: block;
+      min-height: 1.1rem;
+      color: #7F8C8D;
+      font-size: 0.78rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .docs-upload-btn {
       min-height: 2.6rem;
       padding: 0.6rem 1rem;
@@ -1847,7 +1876,9 @@
         </div>
         <div class="docs-field">
           <label for="doc-file">PDF-файл, до 25 МБ</label>
-          <input type="file" id="doc-file" accept="application/pdf,.pdf">
+          <input class="docs-file-input" type="file" id="doc-file" accept="application/pdf,.pdf" onchange="showSelectedDocumentName(this)">
+          <label class="docs-file-picker editor-only" for="doc-file">📎 Выбрать PDF</label>
+          <span class="docs-file-name" id="doc-file-name">Файл не выбран</span>
         </div>
         <button class="docs-upload-btn editor-only" id="docs-upload-btn" onclick="uploadDocument()">📤 Загрузить PDF</button>
       </div>
@@ -3769,6 +3800,11 @@ async function loadDocuments() {
   }
 }
 
+function showSelectedDocumentName(input) {
+  const name = input.files[0]?.name || 'Файл не выбран';
+  document.getElementById('doc-file-name').textContent = name;
+}
+
 async function uploadDocument() {
   const fileInput = document.getElementById('doc-file');
   const titleInput = document.getElementById('doc-title');
@@ -3797,6 +3833,7 @@ async function uploadDocument() {
     if (!response.ok) throw new Error(result.error || 'Ошибка загрузки');
     titleInput.value = '';
     fileInput.value = '';
+    showSelectedDocumentName(fileInput);
     await loadDocuments();
     showSaveNotification('✅ Документ загружен');
   } catch (error) {
