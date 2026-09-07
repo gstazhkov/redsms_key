@@ -101,6 +101,17 @@ try {
   if (!String(error.message).includes('duplicate column name')) throw error;
 }
 
+try {
+  db.exec("ALTER TABLE wiki_history ADD COLUMN author_id TEXT");
+} catch (error) {
+  if (!String(error.message).includes('duplicate column name')) throw error;
+}
+try {
+  db.exec("ALTER TABLE wiki_history ADD COLUMN author_login TEXT");
+} catch (error) {
+  if (!String(error.message).includes('duplicate column name')) throw error;
+}
+
 function encryptSecret(value) {
   const iv = crypto.randomBytes(12);
   const key = crypto.createHash('sha256').update(SESSION_SECRET).digest();
@@ -640,7 +651,31 @@ app.put('/api/wiki', ...requireEditor, (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const json = JSON.stringify(body);
+  const previous = getCurrentWiki();
+  const previousPages = previous ? JSON.parse(previous.json_data).pages || [] : [];
+  const previousById = new Map(previousPages.map(page => [page.id, page]));
+  const pages = body.pages.map(page => {
+    const oldPage = previousById.get(page.id);
+    const changed = !oldPage || JSON.stringify({
+      parentId: oldPage.parentId || null,
+      order: oldPage.order || 0,
+      title: oldPage.title || '',
+      content: oldPage.content || ''
+    }) !== JSON.stringify({
+      parentId: page.parentId || null,
+      order: page.order || 0,
+      title: page.title || '',
+      content: page.content || ''
+    });
+    return changed ? {
+      ...page,
+      updatedAt: now,
+      updatedBy: req.user.id,
+      updatedByLogin: req.user.login
+    } : page;
+  });
+  const savedBody = { ...body, pages };
+  const json = JSON.stringify(savedBody);
 
   db.exec('BEGIN');
   try {
@@ -649,7 +684,8 @@ app.put('/api/wiki', ...requireEditor, (req, res) => {
        ON CONFLICT(id) DO UPDATE SET json_data = excluded.json_data, updated_at = excluded.updated_at`
     ).run(json, now);
 
-    db.prepare('INSERT INTO wiki_history (json_data, saved_at) VALUES (?, ?)').run(json, now);
+    db.prepare('INSERT INTO wiki_history (json_data, saved_at, author_id, author_login) VALUES (?, ?, ?, ?)')
+      .run(json, now, req.user.id, req.user.login);
 
     // Храним не более 50 последних версий
     db.prepare(
@@ -671,9 +707,17 @@ app.put('/api/wiki', ...requireEditor, (req, res) => {
 // Список последних версий Wiki (на случай отката)
 app.get('/api/wiki/history', requireAuth, (req, res) => {
   const rows = db
-    .prepare('SELECT id, saved_at FROM wiki_history ORDER BY id DESC LIMIT 50')
+    .prepare('SELECT id, saved_at, author_login FROM wiki_history ORDER BY id DESC LIMIT 50')
     .all();
   res.json(rows);
+});
+
+app.get('/api/wiki/history/:id', requireAuth, (req, res) => {
+  const row = db
+    .prepare('SELECT id, json_data, saved_at, author_login FROM wiki_history WHERE id = ?')
+    .get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Версия не найдена' });
+  res.json(row);
 });
 
 // Восстановить конкретную версию Wiki из истории
@@ -681,11 +725,21 @@ app.post('/api/wiki/history/:id/restore', ...requireEditor, (req, res) => {
   const row = db.prepare('SELECT json_data FROM wiki_history WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Версия не найдена' });
 
+  const restored = JSON.parse(row.json_data);
   const now = new Date().toISOString();
+  restored.pages = (restored.pages || []).map(page => ({
+    ...page,
+    updatedAt: now,
+    updatedBy: req.user.id,
+    updatedByLogin: req.user.login
+  }));
+  const restoredJson = JSON.stringify(restored);
   db.prepare('UPDATE wiki_store SET json_data = ?, updated_at = ? WHERE id = 1').run(
-    row.json_data,
+    restoredJson,
     now
   );
+  db.prepare('INSERT INTO wiki_history (json_data, saved_at, author_id, author_login) VALUES (?, ?, ?, ?)')
+    .run(restoredJson, now, req.user.id, req.user.login);
   res.json({ ok: true, restoredAt: now });
 });
 
