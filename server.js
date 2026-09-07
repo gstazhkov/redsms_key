@@ -520,12 +520,26 @@ const upload = multer({
   }
 });
 
+function repairUploadedFilename(value) {
+  if (typeof value !== 'string' || !/[ÐÑÃÂ]/.test(value)) return value;
+  try {
+    const repaired = Buffer.from(value, 'latin1').toString('utf8');
+    return repaired.includes('�') ? value : repaired;
+  } catch {
+    return value;
+  }
+}
+
 app.get('/api/docs', requireAuth, (req, res) => {
   const rows = db.prepare(
     'SELECT id, title, original_name AS originalName, uploaded_at AS uploadedAt, size FROM documents ORDER BY uploaded_at DESC'
   ).all();
   res.set('Cache-Control', 'no-store');
-  res.json(rows);
+  res.json(rows.map(row => ({
+    ...row,
+    title: repairUploadedFilename(row.title),
+    originalName: repairUploadedFilename(row.originalName)
+  })));
 });
 
 app.post('/api/docs', ...requireEditor, upload.single('document'), (req, res) => {
@@ -534,15 +548,15 @@ app.post('/api/docs', ...requireEditor, upload.single('document'), (req, res) =>
   }
 
   const id = crypto.randomUUID();
-  const title = typeof req.body.title === 'string' && req.body.title.trim()
-    ? req.body.title.trim().slice(0, 200)
-    : path.basename(req.file.originalname, '.pdf');
+  const originalName = repairUploadedFilename(req.file.originalname).slice(0, 255);
+  const titleInput = typeof req.body.title === 'string' ? repairUploadedFilename(req.body.title.trim()) : '';
+  const title = titleInput ? titleInput.slice(0, 200) : path.basename(originalName, '.pdf');
   const uploadedAt = new Date().toISOString();
 
   try {
     db.prepare(
       'INSERT INTO documents (id, title, original_name, file_name, uploaded_at, size) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(id, title, req.file.originalname.slice(0, 255), req.file.filename, uploadedAt, req.file.size);
+    ).run(id, title, originalName, req.file.filename, uploadedAt, req.file.size);
   } catch (error) {
     fs.rmSync(req.file.path, { force: true });
     console.error('Ошибка сохранения документа:', error);
@@ -557,7 +571,7 @@ app.get('/api/docs/:id/download', requireAuth, (req, res) => {
   if (!row) return res.status(404).json({ error: 'Документ не найден' });
   const filePath = path.join(DOCS_DIR, row.file_name);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Файл документа не найден' });
-  res.download(filePath, row.original_name);
+  res.download(filePath, repairUploadedFilename(row.original_name));
 });
 
 app.delete('/api/docs/:id', ...requireEditor, (req, res) => {
