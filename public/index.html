@@ -94,6 +94,9 @@
       gap: 2rem;
       min-height: auto;
     }
+    #wiki-view {
+      grid-template-columns: 340px minmax(0, 1fr);
+    }
 
     .sidebar {
       background: #F8F9FA;
@@ -1229,6 +1232,30 @@
       border-radius: 5px;
       font: inherit;
       margin-bottom: 0.35rem;
+    }
+
+    .wiki-tree {
+      overflow-x: auto;
+      overflow-y: visible;
+      padding-bottom: 0.25rem;
+    }
+
+    .wiki-tree > ul {
+      min-width: max-content;
+    }
+
+    .wiki-tree .wiki-page-row {
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .wiki-tree .wiki-page-title-text {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      overflow: visible;
+      word-break: normal;
+      overflow-wrap: normal;
+      line-height: 1.35;
     }
 
     .wiki-search-results {
