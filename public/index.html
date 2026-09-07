@@ -1125,7 +1125,7 @@
 
     .docs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 0.65rem;
       align-items: stretch;
     }
@@ -1135,7 +1135,7 @@
       flex-direction: column;
       gap: 0.35rem;
       min-width: 0;
-      min-height: 0;
+      height: 126px;
       padding: 0.75rem;
       background: white;
       border: 1px solid #ECF0F1;
@@ -1178,9 +1178,21 @@
     .docs-empty { padding: 3rem 1rem; color: #7F8C8D; text-align: center; }
 
     @media (max-width: 600px) {
-      .docs-toolbar { align-items: stretch; flex-direction: column; }
+      .docs-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.65rem;
+        padding: 1rem;
+      }
+      .docs-field,
+      .docs-field input,
+      .docs-upload-btn {
+        width: 100%;
+        min-width: 0;
+      }
       .docs-main { grid-column: 1; }
       .docs-grid { grid-template-columns: 1fr; }
+      .doc-card { height: 118px; }
     }
 
     /* ===== Wiki ===== */
