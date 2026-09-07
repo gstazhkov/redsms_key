@@ -1875,6 +1875,11 @@
           <textarea id="new-response" placeholder="Введите текст ответа"></textarea>
         </div>
         <div class="form-group">
+          <label>Документация <span style="font-weight:normal;color:#95A5A6;">(необязательно)</span></label>
+          <input type="text" id="new-link-title" placeholder="Название ссылки, например: Документация API">
+          <input type="url" id="new-link-url" placeholder="https://docs.example.com" style="margin-top:0.5rem;">
+        </div>
+        <div class="form-group">
           <label>Триггер <span style="font-weight:normal;color:#95A5A6;">(необязательно)</span></label>
           <textarea id="new-trigger" placeholder="Когда использовать карточку"></textarea>
         </div>
@@ -3073,6 +3078,8 @@ function openAddNewForm() {
   document.getElementById('new-title').value = '';
   document.getElementById('new-description').value = '';
   document.getElementById('new-response').value = '';
+  document.getElementById('new-link-title').value = '';
+  document.getElementById('new-link-url').value = '';
   document.getElementById('new-trigger').value = '';
   document.getElementById('new-action').value = '';
   document.getElementById('new-info').value = '';
@@ -3100,6 +3107,8 @@ function editCard(id) {
   document.getElementById('new-category').value = item.category || '';
   document.getElementById('new-status').value = item.status || 'draft';
   document.getElementById('new-response').value = details.response || '';
+  document.getElementById('new-link-title').value = details.links?.[0]?.[0] || '';
+  document.getElementById('new-link-url').value = details.links?.[0]?.[1] || '';
   document.getElementById('new-trigger').value = details.trigger || '';
   document.getElementById('new-action').value = details.action || details.actions || '';
   document.getElementById('new-info').value = details.info || '';
@@ -3241,6 +3250,8 @@ async function saveCard() {
   const category = document.getElementById('new-category').value;
   const status = document.getElementById('new-status').value;
   const response = document.getElementById('new-response').value.trim();
+  const linkTitle = document.getElementById('new-link-title').value.trim();
+  const linkUrl = document.getElementById('new-link-url').value.trim();
   const trigger = document.getElementById('new-trigger').value.trim();
   const action = document.getElementById('new-action').value.trim();
   const info = document.getElementById('new-info').value.trim();
@@ -3248,6 +3259,21 @@ async function saveCard() {
   if (!title || !category) {
     alert('Заполните названия и выберите категорию');
     return;
+  }
+
+  if ((linkTitle && !linkUrl) || (!linkTitle && linkUrl)) {
+    alert('Заполните название и ссылку на документацию');
+    return;
+  }
+
+  if (linkUrl) {
+    try {
+      const parsedUrl = new URL(linkUrl);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('unsupported protocol');
+    } catch {
+      alert('Укажите корректную ссылку на документацию, начиная с http:// или https://');
+      return;
+    }
   }
 
   const editingId = document.getElementById('add-modal').dataset.editingId;
@@ -3268,6 +3294,12 @@ async function saveCard() {
   } else {
     delete details.action;
     delete details.actions;
+  }
+  if (linkUrl) {
+    const existingLinks = Array.isArray(details.links) ? details.links.slice(1) : [];
+    details.links = [[linkTitle, linkUrl], ...existingLinks];
+  } else {
+    delete details.links;
   }
   if (!details.response) details.response = 'Нет информации';
 
