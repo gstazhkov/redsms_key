@@ -1211,8 +1211,9 @@
       outline-offset: 0.25rem;
     }
 
-    .wiki-page-toggle {
+    .sidebar .wiki-page-toggle {
       width: 1rem;
+      flex: 0 0 1rem;
       padding: 0;
       border: none;
       background: transparent;
@@ -1223,11 +1224,13 @@
       flex-shrink: 0;
     }
 
-    .wiki-page-toggle:hover {
+    .sidebar .wiki-page-toggle:hover {
       color: #E74C3C;
+      background: transparent;
+      border-left-color: transparent;
     }
 
-    .wiki-page-toggle.empty {
+    .sidebar .wiki-page-toggle.empty {
       visibility: hidden;
       cursor: default;
     }
