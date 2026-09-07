@@ -931,6 +931,32 @@
       transition: all 0.15s;
     }
 
+    .wiki-page-row[draggable="true"] { cursor: grab; }
+    .wiki-page-row.dragging { opacity: 0.45; }
+    .wiki-page-row.drop-target {
+      background: #FDEDEC;
+      border-left-color: #E74C3C;
+      outline: 1px dashed #E74C3C;
+    }
+    .wiki-tree.drop-root {
+      background: #FDEDEC;
+      outline: 1px dashed #E74C3C;
+      outline-offset: 0.25rem;
+    }
+    .wiki-page-toggle {
+      width: 1rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #95A5A6;
+      cursor: pointer;
+      font-size: 0.75rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .wiki-page-toggle:hover { color: #E74C3C; }
+    .wiki-page-toggle.empty { visibility: hidden; cursor: default; }
+
     .wiki-page-row:hover {
       background: #E8EAED;
       border-left-color: #E74C3C;
@@ -2654,11 +2680,82 @@ function switchTab(tab) {
     } else {
       renderWikiTree();
     }
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      document.getElementById('wiki-sidebar').classList.add('open');
+    }
   }
 }
 
 function getWikiChildren(parentId) {
   return wikiData.pages.filter(p => p.parentId === parentId);
+}
+
+let wikiDraggedPageId = null;
+let collapsedWikiPages = new Set();
+try {
+  const savedCollapsedWikiPages = JSON.parse(localStorage.getItem('wikiCollapsedPages') || '[]');
+  if (Array.isArray(savedCollapsedWikiPages)) collapsedWikiPages = new Set(savedCollapsedWikiPages);
+} catch (error) {
+  localStorage.removeItem('wikiCollapsedPages');
+}
+
+function toggleWikiPage(pageId, event) {
+  event.stopPropagation();
+  if (collapsedWikiPages.has(pageId)) collapsedWikiPages.delete(pageId);
+  else collapsedWikiPages.add(pageId);
+  localStorage.setItem('wikiCollapsedPages', JSON.stringify([...collapsedWikiPages]));
+  renderWikiTree();
+}
+
+function isWikiPageDescendant(pageId, possibleAncestorId) {
+  let page = wikiData.pages.find(item => item.id === pageId);
+  while (page && page.parentId) {
+    if (page.parentId === possibleAncestorId) return true;
+    page = wikiData.pages.find(item => item.id === page.parentId);
+  }
+  return false;
+}
+
+function clearWikiDropState() {
+  document.querySelectorAll('.wiki-page-row.drop-target').forEach(row => row.classList.remove('drop-target'));
+  document.getElementById('wiki-tree')?.classList.remove('drop-root');
+}
+
+function handleWikiDragStart(event, pageId) {
+  wikiDraggedPageId = pageId;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', pageId);
+  event.currentTarget.classList.add('dragging');
+}
+
+function handleWikiDragEnd(event) {
+  event.currentTarget.classList.remove('dragging');
+  wikiDraggedPageId = null;
+  clearWikiDropState();
+}
+
+function handleWikiDragOver(event, targetId) {
+  if (!wikiDraggedPageId || wikiDraggedPageId === targetId || isWikiPageDescendant(targetId, wikiDraggedPageId)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  clearWikiDropState();
+  event.currentTarget.classList.add('drop-target');
+}
+
+function handleWikiDrop(event, parentId) {
+  event.preventDefault();
+  event.stopPropagation();
+  const pageId = wikiDraggedPageId || event.dataTransfer.getData('text/plain');
+  clearWikiDropState();
+  if (!pageId || pageId === parentId || isWikiPageDescendant(parentId, pageId)) return;
+  const page = wikiData.pages.find(item => item.id === pageId);
+  if (!page || page.parentId === parentId) return;
+  page.parentId = parentId || null;
+  page.updatedAt = new Date().toISOString();
+  collapsedWikiPages.delete(pageId);
+  localStorage.setItem('wikiCollapsedPages', JSON.stringify([...collapsedWikiPages]));
+  saveWikiToStorage(true);
+  renderWikiTree();
 }
 
 function escapeWikiHtml(str) {
@@ -2685,19 +2782,32 @@ function renderWikiTree() {
     if (children.length === 0) return '';
     return `<ul>${children.map(page => `
       <li>
-        <div class="wiki-page-row ${page.id === currentWikiPageId ? 'active' : ''}" onclick="selectWikiPage('${page.id}')">
+        <div class="wiki-page-row ${page.id === currentWikiPageId ? 'active' : ''}" draggable="true"
+          ondragstart="handleWikiDragStart(event, '${page.id}')"
+          ondragend="handleWikiDragEnd(event)"
+          ondragover="handleWikiDragOver(event, '${page.id}')"
+          ondrop="handleWikiDrop(event, '${page.id}')"
+          onclick="selectWikiPage('${page.id}')">
+          <button class="wiki-page-toggle ${getWikiChildren(page.id).length ? '' : 'empty'}" onclick="toggleWikiPage('${page.id}', event)" aria-label="${collapsedWikiPages.has(page.id) ? 'Развернуть' : 'Свернуть'}">${collapsedWikiPages.has(page.id) ? '▸' : '▾'}</button>
           <span class="wiki-page-title-text">${page.icon || '📄'} ${escapeWikiHtml(page.title || 'Без названия')}</span>
           <span class="wiki-page-actions">
             <button onclick="event.stopPropagation(); createWikiPage('${page.id}')" title="Добавить подстраницу">➕</button>
             <button onclick="event.stopPropagation(); deleteWikiPage('${page.id}')" title="Удалить">🗑️</button>
           </span>
         </div>
-        ${renderLevel(page.id)}
+        ${collapsedWikiPages.has(page.id) ? '' : renderLevel(page.id)}
       </li>
     `).join('')}</ul>`;
   }
 
   treeEl.innerHTML = renderLevel(null);
+  treeEl.ondragover = event => {
+    if (!wikiDraggedPageId || event.target.closest('.wiki-page-row')) return;
+    event.preventDefault();
+    clearWikiDropState();
+    treeEl.classList.add('drop-root');
+  };
+  treeEl.ondrop = event => handleWikiDrop(event, null);
 }
 
 function renderWikiBreadcrumb(id) {
