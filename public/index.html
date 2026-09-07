@@ -1401,6 +1401,19 @@
       color: #2C3E50;
     }
 
+    .wiki-content-editable > *,
+    .wiki-content-editable li {
+      cursor: grab;
+    }
+
+    .wiki-content-editable .wiki-content-dragging {
+      opacity: 0.45;
+    }
+
+    .wiki-content-editable .wiki-content-drop-target {
+      border-top: 2px solid #E74C3C;
+    }
+
     .wiki-content-editable h1 {
       font-size: 1.6rem;
       margin: 1rem 0 0.5rem;
@@ -1544,8 +1557,8 @@
           <button onclick="wikiFormatBlock('P')" title="Обычный текст">¶</button>
           <button onclick="execWikiCmd('insertUnorderedList')" title="Маркированный список">• Список</button>
           <button onclick="execWikiCmd('insertOrderedList')" title="Нумерованный список">1. Список</button>
-          <button onclick="execWikiCmd('indent')" title="Сделать вложенным">↳ Вложить</button>
-          <button onclick="execWikiCmd('outdent')" title="Поднять уровень">↰ Поднять</button>
+          <button onmousedown="event.preventDefault()" onclick="execWikiCmd('indent')" title="Увеличить отступ">↳ Отступ</button>
+          <button onmousedown="event.preventDefault()" onclick="execWikiCmd('outdent')" title="Уменьшить отступ">↰ Убрать отступ</button>
           <button onclick="wikiFormatBlock('BLOCKQUOTE')" title="Цитата">❝ Цитата</button>
           <button onclick="toggleWikiCode()" title="Код">&lt;/&gt; Код</button>
           <button onmousedown="event.preventDefault()" onclick="exitWikiCodeBlock()" title="Завершить код и продолжить обычным текстом">↵ Текст</button>
@@ -3623,6 +3636,9 @@ function selectWikiPage(id) {
 
   document.getElementById('wiki-title-input').value = page.title || '';
   document.getElementById('wiki-content').innerHTML = page.content || '';
+  document.querySelectorAll('#wiki-content > p, #wiki-content > h1, #wiki-content > h2, #wiki-content > h3, #wiki-content > blockquote, #wiki-content > pre, #wiki-content > ul > li, #wiki-content > ol > li').forEach(block => {
+    block.draggable = currentUser?.role !== 'reader';
+  });
   document.getElementById('wiki-updated-at').textContent = page.updatedAt
     ? ('Изменено: ' + new Date(page.updatedAt).toLocaleString('ru-RU'))
     : '';
@@ -3733,6 +3749,58 @@ function handleWikiContentClick(event) {
   selectWikiPage(link.dataset.wikiPageId);
 }
 
+function getWikiContentBlock(target) {
+  const editor = document.getElementById('wiki-content');
+  const block = target.closest('p, h1, h2, h3, blockquote, pre, li');
+  return block && editor.contains(block) ? block : null;
+}
+
+function clearWikiContentDropState() {
+  document.querySelectorAll('.wiki-content-drop-target').forEach(block => {
+    block.classList.remove('wiki-content-drop-target');
+  });
+}
+
+function handleWikiContentDragStart(event) {
+  const block = getWikiContentBlock(event.target);
+  if (!block || currentUser?.role === 'reader') {
+    event.preventDefault();
+    return;
+  }
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', 'wiki-content-block');
+  block.classList.add('wiki-content-dragging');
+}
+
+function handleWikiContentDragOver(event) {
+  const block = getWikiContentBlock(event.target);
+  if (!block || !document.querySelector('.wiki-content-dragging')) return;
+  event.preventDefault();
+  clearWikiContentDropState();
+  block.classList.add('wiki-content-drop-target');
+}
+
+function handleWikiContentDrop(event) {
+  event.preventDefault();
+  const dragged = document.querySelector('.wiki-content-dragging');
+  const target = getWikiContentBlock(event.target);
+  clearWikiContentDropState();
+  if (!dragged || !target || dragged === target || dragged.contains(target)) return;
+
+  const targetRect = target.getBoundingClientRect();
+  if (event.clientY < targetRect.top + targetRect.height / 2) {
+    target.before(dragged);
+  } else {
+    target.after(dragged);
+  }
+  updateCurrentPageContent();
+}
+
+function handleWikiContentDragEnd() {
+  document.querySelector('.wiki-content-dragging')?.classList.remove('wiki-content-dragging');
+  clearWikiContentDropState();
+}
+
 function exitWikiCodeBlock() {
   const editor = document.getElementById('wiki-content');
   const selection = window.getSelection();
@@ -3806,8 +3874,13 @@ searchClear.addEventListener('click', () => {
   filterCards();
 });
 document.getElementById('ai-form').addEventListener('submit', sendAiMessage);
-document.getElementById('wiki-content').addEventListener('click', handleWikiContentClick);
-document.getElementById('wiki-content').addEventListener('keydown', finishWikiCodeBlock);
+const wikiContentEditor = document.getElementById('wiki-content');
+wikiContentEditor.addEventListener('click', handleWikiContentClick);
+wikiContentEditor.addEventListener('keydown', finishWikiCodeBlock);
+wikiContentEditor.addEventListener('dragstart', handleWikiContentDragStart);
+wikiContentEditor.addEventListener('dragover', handleWikiContentDragOver);
+wikiContentEditor.addEventListener('drop', handleWikiContentDrop);
+wikiContentEditor.addEventListener('dragend', handleWikiContentDragEnd);
 document.getElementById('ai-input').addEventListener('keydown', event => {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
